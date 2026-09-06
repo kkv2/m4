@@ -5,13 +5,17 @@
 // knowledge derived from them are shared across the whole tenant.
 
 generator client {
-  provider = "prisma-client-js"
+  provider = "prisma-client"
   output   = "../src/generated/client"
+  // Emit explicit extensions so the client resolves under plain Node ESM too,
+  // not only through a bundler.
+  importFileExtension = "ts"
 }
 
+// The connection URL lives in prisma.config.ts at the workspace root, and the
+// runtime connection comes from the driver adapter in src/index.ts.
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
 }
 
 enum Role {
@@ -89,7 +93,7 @@ model Conversation {
 }
 
 model Message {
-  id             String      @id @default(cuid())
+  id             String       @id @default(cuid())
   conversationId String
   role           MessageRole
   /// Rendered text content. Non-text modalities live in `attachments`.
@@ -97,7 +101,7 @@ model Message {
   /// The model that produced this message, e.g. "gpt-4o" or "gemini-2.0-flash".
   provider       LlmProvider?
   model          String?
-  createdAt      DateTime    @default(now())
+  createdAt      DateTime     @default(now())
 
   conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
   attachments  Attachment[]
@@ -107,13 +111,13 @@ model Message {
 }
 
 model Attachment {
-  id        String   @id @default(cuid())
-  messageId String
+  id         String   @id @default(cuid())
+  messageId  String
   /// Object storage key. Local development writes to the Docker volume.
   storageKey String
-  mimeType  String
-  sizeBytes Int
-  createdAt DateTime @default(now())
+  mimeType   String
+  sizeBytes  Int
+  createdAt  DateTime @default(now())
 
   message Message @relation(fields: [messageId], references: [id], onDelete: Cascade)
 
@@ -122,19 +126,19 @@ model Attachment {
 }
 
 model Document {
-  id          String         @id @default(cuid())
-  tenantId    String
+  id           String         @id @default(cuid())
+  tenantId     String
   uploadedById String?
-  title       String
-  storageKey  String
-  mimeType    String
-  sizeBytes   Int
-  status      DocumentStatus @default(PENDING)
-  createdAt   DateTime       @default(now())
-  updatedAt   DateTime       @updatedAt
+  title        String
+  storageKey   String
+  mimeType     String
+  sizeBytes    Int
+  status       DocumentStatus @default(PENDING)
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
 
-  tenant     Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  uploadedBy User?            @relation(fields: [uploadedById], references: [id], onDelete: SetNull)
+  tenant     Tenant          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  uploadedBy User?           @relation(fields: [uploadedById], references: [id], onDelete: SetNull)
   chunks     DocumentChunk[]
 
   @@index([tenantId, createdAt])

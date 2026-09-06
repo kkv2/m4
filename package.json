@@ -18,21 +18,22 @@
     "typecheck": "pnpm -r --if-present typecheck",
     "test": "pnpm -r --if-present test",
     "test:e2e": "pnpm --filter @m4/web test:e2e",
-    "db:generate": "pnpm --filter @m4/db generate",
-    "db:migrate": "prisma migrate dev --schema packages/db/prisma/schema.prisma --skip-generate && pnpm db:generate",
-    "db:push": "prisma db push --schema packages/db/prisma/schema.prisma --skip-generate && pnpm db:generate",
-    "db:studio": "prisma studio --schema packages/db/prisma/schema.prisma",
+    "db:generate": "prisma generate",
+    "db:migrate": "prisma migrate dev && pnpm db:generate",
+    "db:push": "prisma db push && pnpm db:generate",
+    "db:studio": "prisma studio",
     "db:up": "docker compose -f docker/docker-compose.yml up -d",
     "db:down": "docker compose -f docker/docker-compose.yml down",
     "db:reset": "docker compose -f docker/docker-compose.yml down -v && pnpm db:up",
     "check": "pnpm format:check && pnpm lint && pnpm typecheck && pnpm test",
-    "db:deploy": "prisma migrate deploy --schema packages/db/prisma/schema.prisma"
+    "db:deploy": "prisma migrate deploy"
   },
   "devDependencies": {
     "@m4/config": "workspace:*",
+    "dotenv": "^16.4.7",
     "prettier": "^3.4.2",
     "prettier-plugin-tailwindcss": "^0.8.1",
-    "prisma": "^6.2.1",
+    "prisma": "^7.10.0",
     "typescript": "^5.7.3"
   },
   "pnpm": {
