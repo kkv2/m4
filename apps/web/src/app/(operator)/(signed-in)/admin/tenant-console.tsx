@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState, type FormEvent } from "react";
 
 import type { Language } from "~/i18n";
@@ -112,7 +113,8 @@ export function TenantConsole() {
                   <th className="py-2 pr-4 font-medium">{admin.tenants.columnId}</th>
                   <th className="py-2 pr-4 font-medium">{admin.tenants.columnLanguage}</th>
                   <th className="py-2 pr-4 font-medium">{admin.tenants.columnUsers}</th>
-                  <th className="py-2 font-medium">{admin.tenants.columnChats}</th>
+                  <th className="py-2 pr-4 font-medium">{admin.tenants.columnChats}</th>
+                  <th className="py-2 font-medium" />
                 </tr>
               </thead>
               <tbody>
@@ -122,7 +124,15 @@ export function TenantConsole() {
                     <td className="py-2 pr-4 font-mono text-xs text-content-muted">{tenant.id}</td>
                     <td className="py-2 pr-4">{admin.language[tenant.defaultLanguage]}</td>
                     <td className="py-2 pr-4 tabular-nums">{tenant.userCount}</td>
-                    <td className="py-2 tabular-nums">{tenant.conversationCount}</td>
+                    <td className="py-2 pr-4 tabular-nums">{tenant.conversationCount}</td>
+                    <td className="py-2">
+                      <Link
+                        href={`/admin/tenants/${tenant.id}`}
+                        className="text-xs text-content-muted underline-offset-4 hover:text-content hover:underline"
+                      >
+                        {admin.tenants.detail}
+                      </Link>
+                    </td>
                   </tr>
                 ))}
               </tbody>
