@@ -12,3 +12,7 @@ docs/assets
 # Markdown is authored by hand — README.md mixes in centred HTML and the
 # CLAUDE.md tables are kept readable in source. Prettier would reflow both.
 *.md
+
+# Spec Kit scaffolding is generated and refreshed by the Specify CLI. Letting
+# Prettier reformat it makes every `specify` run show up as a diff.
+.specify

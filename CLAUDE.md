@@ -79,6 +79,8 @@ m4/
 │   ├── db/               Prisma schema, migrations, shared PrismaClient
 │   └── config/           Shared ESLint flat config and tsconfig base
 ├── docker/               Local PostgreSQL (pgvector) via Docker Compose
+├── specs/                One directory per specified feature
+├── .specify/             Spec Kit: constitution, templates, scripts
 ├── prisma.config.ts      Schema path, migrations path and the CLI datasource URL
 └── .github/workflows/    CI
 ```
@@ -160,6 +162,40 @@ precedent — is specified first. A small or self-evident change may simply be
 written. When in doubt, write the spec; the cost of one is low next to the cost
 of a design nobody agreed to. The workflow rules above are not subject to this
 judgement call: branch and PR discipline applies to every change, spec or not.
+
+### The constitution
+
+`.specify/memory/constitution.md` holds the standing agreement every spec is
+checked against: tenant isolation, one shared tenant space, spec before code,
+strict types, and PR discipline. It outranks any individual spec. Amend it
+through the same issue → branch → PR flow as code, and keep it in step with this
+file — the two describe the same rules from different angles.
+
+### The Spec Kit flow
+
+Spec Kit is installed for Claude Code as skills under `.claude/skills/`.
+
+| Skill | When |
+| --- | --- |
+| `/speckit-specify` | Write `specs/<n>-<short-name>/spec.md` from a description |
+| `/speckit-clarify` | Optional — de-risk ambiguity before planning |
+| `/speckit-plan` | Turn the spec into an implementation plan |
+| `/speckit-tasks` | Break the plan into ordered tasks |
+| `/speckit-analyze` | Optional — cross-check spec, plan and tasks |
+| `/speckit-implement` | Execute the tasks |
+| `/speckit-constitution` | Amend `.specify/memory/constitution.md` |
+
+Two conventions on top of the defaults:
+
+- **Number the feature after its issue.** `create-new-feature.sh` numbers
+  `specs/` sequentially unless told otherwise, so pass `--number <issue-number>`:
+  issue #20 becomes `specs/020-spec-kit-init/`, alongside branch
+  `chore/20-spec-kit-init`.
+- **Spec Kit does not touch git.** The `git` extension is deliberately not
+  installed: it would branch as `NNN-short-name` and collide with the naming
+  rule above. Branch and open the PR by hand, as always.
+
+The spec belongs to the change: it lands in the same PR as the code it describes.
 
 ## Language
 
