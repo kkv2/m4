@@ -1,0 +1,123 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  # Static analysis and unit tests never open a connection; this only satisfies
+  # the env schema and Prisma's datasource URL parsing.
+  DATABASE_URL: postgresql://m4:m4@localhost:5432/m4?schema=public
+  SKIP_ENV_VALIDATION: "true"
+
+jobs:
+  verify:
+    name: Lint, typecheck and test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+
+      # setup-node's built-in pnpm cache requires a lockfile to exist, which
+      # is not true on a bootstrap run. Cache the pnpm store directly instead.
+      - name: Locate the pnpm store
+        run: echo "PNPM_STORE_PATH=$(pnpm store path --silent)" >> "$GITHUB_ENV"
+
+      - uses: actions/cache@v4
+        with:
+          path: ${{ env.PNPM_STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('pnpm-lock.yaml', '**/package.json') }}
+          restore-keys: ${{ runner.os }}-pnpm-store-
+
+      # pnpm turns on --frozen-lockfile by itself in CI once pnpm-lock.yaml is
+      # committed, so this stays correct after the first install.
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Generate Prisma client
+        run: pnpm db:generate
+
+      - name: Check formatting
+        run: pnpm format:check
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Typecheck
+        run: pnpm typecheck
+
+      - name: Unit and integration tests
+        run: pnpm test
+
+  e2e:
+    name: E2E
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: pgvector/pgvector:pg17
+        env:
+          POSTGRES_USER: m4
+          POSTGRES_PASSWORD: m4
+          POSTGRES_DB: m4
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U m4 -d m4"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+
+      # setup-node's built-in pnpm cache requires a lockfile to exist, which
+      # is not true on a bootstrap run. Cache the pnpm store directly instead.
+      - name: Locate the pnpm store
+        run: echo "PNPM_STORE_PATH=$(pnpm store path --silent)" >> "$GITHUB_ENV"
+
+      - uses: actions/cache@v4
+        with:
+          path: ${{ env.PNPM_STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('pnpm-lock.yaml', '**/package.json') }}
+          restore-keys: ${{ runner.os }}-pnpm-store-
+
+      # pnpm turns on --frozen-lockfile by itself in CI once pnpm-lock.yaml is
+      # committed, so this stays correct after the first install.
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Apply database schema
+        run: pnpm db:push
+
+      - name: Install Playwright browsers
+        run: pnpm --filter @m4/web exec playwright install --with-deps chromium
+
+      - name: Run E2E tests
+        run: pnpm test:e2e
+        env:
+          OPENAI_API_KEY: test
+          GEMINI_API_KEY: test
+          NEXT_PUBLIC_APP_URL: http://localhost:3000
+
+      - uses: actions/upload-artifact@v4
+        if: ${{ !cancelled() }}
+        with:
+          name: playwright-report
+          path: apps/web/playwright-report/
+          retention-days: 7

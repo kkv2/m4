@@ -1,0 +1,20 @@
+@import "tailwindcss";
+
+/* M4 runs on a dark base tone throughout. */
+@theme {
+  --color-surface: oklch(0.17 0.012 265);
+  --color-surface-raised: oklch(0.22 0.014 265);
+  --color-border-subtle: oklch(0.32 0.016 265);
+  --color-content: oklch(0.94 0.005 265);
+  --color-content-muted: oklch(0.72 0.012 265);
+  --color-accent: oklch(0.72 0.15 250);
+}
+
+:root {
+  color-scheme: dark;
+}
+
+body {
+  background-color: var(--color-surface);
+  color: var(--color-content);
+}

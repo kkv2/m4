@@ -1,0 +1,14 @@
+node_modules
+.next
+dist
+build
+coverage
+playwright-report
+test-results
+pnpm-lock.yaml
+packages/db/src/generated
+docs/assets
+
+# Markdown is authored by hand — README.md mixes in centred HTML and the
+# CLAUDE.md tables are kept readable in source. Prettier would reflow both.
+*.md

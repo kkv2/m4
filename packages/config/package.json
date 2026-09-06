@@ -1,0 +1,21 @@
+{
+  "name": "@m4/config",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "files": [
+    "eslint.base.js",
+    "tsconfig.base.json"
+  ],
+  "exports": {
+    "./eslint": "./eslint.base.js",
+    "./tsconfig": "./tsconfig.base.json"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.18.0",
+    "eslint": "^9.18.0",
+    "eslint-config-prettier": "^9.1.0",
+    "eslint-plugin-import": "^2.31.0",
+    "typescript-eslint": "^8.21.0"
+  }
+}

@@ -1,0 +1,9 @@
+{
+  "extends": "@m4/config/tsconfig",
+  "compilerOptions": {
+    "lib": ["ES2022"],
+    "types": ["node"]
+  },
+  "include": ["src/**/*.ts", "eslint.config.js"],
+  "exclude": ["node_modules", "src/generated"]
+}
