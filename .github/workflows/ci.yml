@@ -30,8 +30,10 @@ jobs:
           node-version-file: .nvmrc
           cache: pnpm
 
+      # pnpm turns on --frozen-lockfile by itself in CI once pnpm-lock.yaml is
+      # committed, so this stays correct after the first install.
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+        run: pnpm install
 
       - name: Generate Prisma client
         run: pnpm db:generate
@@ -75,8 +77,10 @@ jobs:
           node-version-file: .nvmrc
           cache: pnpm
 
+      # pnpm turns on --frozen-lockfile by itself in CI once pnpm-lock.yaml is
+      # committed, so this stays correct after the first install.
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+        run: pnpm install
 
       - name: Apply database schema
         run: pnpm db:push
