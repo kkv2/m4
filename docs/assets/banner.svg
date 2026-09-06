@@ -1,0 +1,58 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 420" width="1200" height="420" role="img" aria-label="M4 — Multi Model, Multi Modal.">
+  <defs>
+    <clipPath id="a3Clip"><rect width="1200" height="420" rx="16"/></clipPath>
+    <linearGradient id="a3Bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#070A11"/><stop offset="100%" stop-color="#04060B"/>
+    </linearGradient>
+    <linearGradient id="a3Word" x1="0" y1="0" x2="0.9" y2="1">
+      <stop offset="0%" stop-color="#FFFFFF"/><stop offset="52%" stop-color="#A9C7FF"/><stop offset="100%" stop-color="#3D6FE0"/>
+    </linearGradient>
+    <radialGradient id="a3Glow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#2C5AE0" stop-opacity="0.42"/><stop offset="100%" stop-color="#2C5AE0" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="a3Glow2" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#22D3EE" stop-opacity="0.16"/><stop offset="100%" stop-color="#22D3EE" stop-opacity="0"/>
+    </radialGradient>
+    <pattern id="a3Grid" width="40" height="40" patternUnits="userSpaceOnUse">
+      <path d="M40 0H0V40" fill="none" stroke="#8FB6FF" stroke-opacity="0.075" stroke-width="1"/>
+    </pattern>
+    <radialGradient id="a3Fade" cx="21%" cy="50%" r="62%">
+      <stop offset="0%" stop-color="#FFFFFF" stop-opacity="0.95"/>
+      <stop offset="70%" stop-color="#FFFFFF" stop-opacity="0.18"/>
+      <stop offset="100%" stop-color="#FFFFFF" stop-opacity="0"/>
+    </radialGradient>
+    <mask id="a3Mask"><rect width="1200" height="420" fill="url(#a3Fade)"/></mask>
+  </defs>
+
+  <g clip-path="url(#a3Clip)">
+    <rect width="1200" height="420" fill="url(#a3Bg)"/>
+    <g mask="url(#a3Mask)"><rect width="1200" height="420" fill="url(#a3Grid)"/></g>
+    <ellipse cx="250" cy="210" rx="420" ry="280" fill="url(#a3Glow)"/>
+    <ellipse cx="900" cy="300" rx="420" ry="240" fill="url(#a3Glow2)"/>
+
+    <g fill="none" stroke="#6E9BFF">
+      <circle cx="252" cy="210" r="120" stroke-opacity="0.16"/>
+      <circle cx="252" cy="210" r="172" stroke-opacity="0.11"/>
+      <circle cx="252" cy="210" r="228" stroke-opacity="0.07"/>
+    </g>
+    <g stroke="#7FA8FF" stroke-opacity="0.22" stroke-width="1" fill="none">
+      <path d="M172 118 L358 148 M358 148 L308 356 M308 356 L106 292 M106 292 L172 118 M358 148 L106 292"/>
+    </g>
+    <g>
+      <circle cx="172" cy="118" r="5"   fill="#9DBCFF" fill-opacity="0.9"/>
+      <circle cx="358" cy="148" r="6.5" fill="#CBDCFF"/>
+      <circle cx="308" cy="356" r="5"   fill="#22D3EE" fill-opacity="0.9"/>
+      <circle cx="106" cy="292" r="4"   fill="#7FA8FF" fill-opacity="0.8"/>
+      <circle cx="358" cy="148" r="15"  fill="none" stroke="#CBDCFF" stroke-opacity="0.22"/>
+    </g>
+  </g>
+
+  <g font-family="'Helvetica Neue', Helvetica, Arial, sans-serif">
+    <text x="252" y="272" text-anchor="middle" fill="url(#a3Word)" font-size="156" font-weight="700" letter-spacing="-5">M4</text>
+
+    <text x="500" y="150" fill="#7587AE" font-size="13.5" letter-spacing="5.6">MULTI&#8209;TENANT AI KNOWLEDGE PLATFORM</text>
+    <text x="500" y="212" fill="#EEF3FF" font-size="44" font-weight="600" letter-spacing="0.4">Multi Model,</text>
+    <text x="500" y="262" fill="#EEF3FF" font-size="44" font-weight="600" letter-spacing="0.4">Multi Modal.</text>
+    <text x="502" y="304" fill="#7C8DB2" font-size="19" letter-spacing="1.2">One workspace. Many models. Any modality.</text>
+  </g>
+</svg>
