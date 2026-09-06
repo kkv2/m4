@@ -78,6 +78,13 @@ jobs:
       - name: Unit and integration tests
         run: pnpm test
 
+      # Neither lint, typecheck nor the tests notice server-only code reaching a
+      # Client Component — the build is what fails, because it tries to send
+      # Prisma and node-postgres to the browser. Since the server boundary is a
+      # stated invariant with no other automated guard, the build is that guard.
+      - name: Production build
+        run: pnpm build
+
   e2e:
     name: E2E
     runs-on: ubuntu-latest

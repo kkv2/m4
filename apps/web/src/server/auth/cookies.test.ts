@@ -37,15 +37,23 @@ describe("readCookie", () => {
 });
 
 describe("session cookies", () => {
-  it("are httpOnly, SameSite=Lax and scoped to their surface", () => {
+  it("are httpOnly and SameSite=Lax", () => {
     const tenant = serialiseTenantSessionCookie("t");
     const operator = serialiseOperatorSessionCookie("o");
 
     expect(tenant).toContain("HttpOnly");
     expect(tenant).toContain("SameSite=Lax");
-    expect(tenant).toContain("Path=/");
     expect(operator).toContain("HttpOnly");
-    expect(operator).toContain("Path=/admin");
+    expect(operator).toContain("SameSite=Lax");
+  });
+
+  it("are both scoped to the root path, because the BFF is not under /admin", () => {
+    // Scoping the operator cookie to /admin would look tidier and would stop it
+    // reaching /api/trpc, which is where every procedure the console calls
+    // lives. The operator/tenant boundary is held by the separate cookie names
+    // and separate session tables instead.
+    expect(serialiseTenantSessionCookie("t")).toContain("Path=/;");
+    expect(serialiseOperatorSessionCookie("o")).toContain("Path=/;");
   });
 
   it("expire in 30 days", () => {
@@ -75,8 +83,9 @@ describe("the sign-in language cookie", () => {
 });
 
 describe("serialiseClearedCookie", () => {
-  it("expires the cookie immediately on the path it was set with", () => {
+  it("expires the cookie immediately, on the path it was set with", () => {
     expect(serialiseClearedCookie(TENANT_SESSION_COOKIE)).toContain("Max-Age=0");
-    expect(serialiseClearedCookie(OPERATOR_SESSION_COOKIE)).toContain("Path=/admin");
+    expect(serialiseClearedCookie(OPERATOR_SESSION_COOKIE)).toContain("Max-Age=0");
+    expect(serialiseClearedCookie(OPERATOR_SESSION_COOKIE)).toContain("Path=/;");
   });
 });
