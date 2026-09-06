@@ -7,20 +7,20 @@
     ".": "./src/index.ts"
   },
   "scripts": {
-    "generate": "prisma generate",
-    "format": "prisma format",
+    "format": "prisma format --config ../../prisma.config.ts",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@prisma/client": "^6.2.1"
+    "@prisma/adapter-pg": "^7.10.0",
+    "@prisma/client": "^7.10.0"
   },
   "devDependencies": {
     "@m4/config": "workspace:*",
     "@types/node": "^22.10.7",
     "eslint": "^10.9.1",
-    "prisma": "^6.2.1",
+    "prisma": "^7.10.0",
     "typescript": "^5.7.3"
   }
 }

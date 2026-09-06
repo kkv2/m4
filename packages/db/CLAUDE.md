@@ -3,6 +3,22 @@
 Owns the Prisma schema, migrations and the shared `PrismaClient`. See the root
 `CLAUDE.md` for workflow rules.
 
+## How Prisma is wired (v7)
+
+Prisma 7 split configuration in two, and both halves live outside this file:
+
+- **The CLI** reads `prisma.config.ts` at the workspace root. It declares the
+  schema path, the migrations path and the datasource URL, so none of the
+  `db:*` scripts pass `--schema` any more. `schema.prisma` itself has a
+  `datasource` block with only a `provider` — a `url` there is now an error.
+- **The runtime** connects through a driver adapter. `src/index.ts` builds
+  `@prisma/adapter-pg` from `DATABASE_URL` and hands it to `PrismaClient`.
+
+The client is produced by the `prisma-client` generator (the old
+`prisma-client-js` is deprecated), which emits TypeScript rather than JavaScript
+into `src/generated/client`. Import it from `client.ts` — with the extension,
+which `importFileExtension` in the generator block makes consistent throughout.
+
 ## Schema conventions
 
 - Models are `PascalCase` singular; tables are `snake_case` plural via `@@map`.
@@ -15,8 +31,7 @@ Owns the Prisma schema, migrations and the shared `PrismaClient`. See the root
 
 ## Changing the schema
 
-Run these **from the workspace root** — that is the only directory where Prisma
-finds the shared `.env`.
+Run these **from the workspace root**, where `prisma.config.ts` sits.
 
 ```bash
 pnpm db:migrate     # creates and applies a migration, then regenerates the
@@ -24,8 +39,11 @@ pnpm db:migrate     # creates and applies a migration, then regenerates the
 pnpm db:generate    # regenerate the client on its own
 ```
 
-`db:generate` is the exception that runs inside this package, because
-generating needs no database connection and therefore no environment.
+Prisma 7 no longer regenerates the client as a side effect of `migrate` or
+`db push`, so both scripts chain `db:generate` explicitly.
+
+Formatting the schema is the one command that runs inside this package
+(`pnpm --filter @m4/db format`); it points the CLI back at the root config.
 
 Never edit an applied migration. Use `pnpm db:push` only for throwaway local
 experiments, never as a substitute for a migration on a change that ships.

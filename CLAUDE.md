@@ -79,6 +79,7 @@ m4/
 │   ├── db/               Prisma schema, migrations, shared PrismaClient
 │   └── config/           Shared ESLint flat config and tsconfig base
 ├── docker/               Local PostgreSQL (pgvector) via Docker Compose
+├── prisma.config.ts      Schema path, migrations path and the CLI datasource URL
 └── .github/workflows/    CI
 ```
 
@@ -110,9 +111,10 @@ Run everything from the repository root; pnpm dispatches to the right package.
 First-time setup: `cp .env.example .env`, fill in the API keys, then
 `pnpm install && pnpm db:up && pnpm db:push`.
 
-There is **one `.env`, at the workspace root**, shared by every package. Prisma
-finds it because its commands run from the root; `apps/web` loads it explicitly
-in `src/env/server.ts`, since Next.js otherwise only looks inside `apps/web`.
+There is **one `.env`, at the workspace root**, shared by every package.
+`prisma.config.ts` loads it by absolute path, so the `db:*` scripts work from
+anywhere; `apps/web` loads it explicitly in `src/env/server.ts`, since Next.js
+otherwise only looks inside `apps/web`.
 
 ## Tech stack
 
@@ -138,6 +140,9 @@ infrastructure. Cloud infrastructure is deliberately out of scope for now.
   Tailwind theme tokens. Use the tokens rather than hard-coded colours.
 - **Prisma models are `PascalCase` singular** and map to `snake_case` plural
   tables via `@@map`.
+- **Prisma connects through a driver adapter.** `schema.prisma` carries no
+  connection URL: the CLI reads it from `prisma.config.ts`, and `PrismaClient`
+  gets `@prisma/adapter-pg` in `packages/db/src/index.ts`.
 - **Tests live next to the code** as `*.test.ts(x)`; E2E specs live in
   `apps/web/e2e` as `*.spec.ts`.
 

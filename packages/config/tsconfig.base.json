@@ -5,6 +5,10 @@
     "lib": ["ES2022"],
     "module": "ESNext",
     "moduleResolution": "Bundler",
+    // The generated Prisma client is TypeScript source imported with an
+    // explicit .ts extension, which needs this. Safe because nothing here
+    // emits: Next.js and Vitest do the compiling.
+    "allowImportingTsExtensions": true,
     "resolveJsonModule": true,
     "esModuleInterop": true,
     "isolatedModules": true,
