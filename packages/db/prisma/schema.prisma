@@ -1,0 +1,159 @@
+// M4 — multi-tenant schema.
+//
+// Every row that carries knowledge or conversation belongs to exactly one
+// Tenant. There is no per-user private space by design: uploaded files and the
+// knowledge derived from them are shared across the whole tenant.
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/client"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  OWNER
+  ADMIN
+  MEMBER
+}
+
+enum MessageRole {
+  USER
+  ASSISTANT
+  SYSTEM
+}
+
+enum LlmProvider {
+  OPENAI
+  GEMINI
+}
+
+enum DocumentStatus {
+  PENDING
+  PROCESSING
+  READY
+  FAILED
+}
+
+model Tenant {
+  id        String   @id @default(cuid())
+  /// URL-safe tenant identifier, unique across the platform.
+  slug      String   @unique
+  name      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  users         User[]
+  conversations Conversation[]
+  documents     Document[]
+
+  @@map("tenants")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  tenantId  String
+  email     String
+  name      String?
+  role      Role     @default(MEMBER)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  tenant        Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  conversations Conversation[]
+  documents     Document[]
+
+  @@unique([tenantId, email])
+  @@index([tenantId])
+  @@map("users")
+}
+
+model Conversation {
+  id        String   @id @default(cuid())
+  tenantId  String
+  userId    String
+  title     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  tenant   Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  messages Message[]
+
+  @@index([tenantId, updatedAt])
+  @@index([userId])
+  @@map("conversations")
+}
+
+model Message {
+  id             String      @id @default(cuid())
+  conversationId String
+  role           MessageRole
+  /// Rendered text content. Non-text modalities live in `attachments`.
+  content        String
+  /// The model that produced this message, e.g. "gpt-4o" or "gemini-2.0-flash".
+  provider       LlmProvider?
+  model          String?
+  createdAt      DateTime    @default(now())
+
+  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  attachments  Attachment[]
+
+  @@index([conversationId, createdAt])
+  @@map("messages")
+}
+
+model Attachment {
+  id        String   @id @default(cuid())
+  messageId String
+  /// Object storage key. Local development writes to the Docker volume.
+  storageKey String
+  mimeType  String
+  sizeBytes Int
+  createdAt DateTime @default(now())
+
+  message Message @relation(fields: [messageId], references: [id], onDelete: Cascade)
+
+  @@index([messageId])
+  @@map("attachments")
+}
+
+model Document {
+  id          String         @id @default(cuid())
+  tenantId    String
+  uploadedById String?
+  title       String
+  storageKey  String
+  mimeType    String
+  sizeBytes   Int
+  status      DocumentStatus @default(PENDING)
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+
+  tenant     Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  uploadedBy User?            @relation(fields: [uploadedById], references: [id], onDelete: SetNull)
+  chunks     DocumentChunk[]
+
+  @@index([tenantId, createdAt])
+  @@map("documents")
+}
+
+/// One retrievable unit of a Document. The embedding column is added by a
+/// follow-up migration once the pgvector extension is enabled.
+model DocumentChunk {
+  id         String   @id @default(cuid())
+  documentId String
+  /// Position of this chunk within its source document, starting at 0.
+  ordinal    Int
+  content    String
+  createdAt  DateTime @default(now())
+
+  document Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+
+  @@unique([documentId, ordinal])
+  @@index([documentId])
+  @@map("document_chunks")
+}

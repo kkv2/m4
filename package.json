@@ -1,0 +1,36 @@
+{
+  "name": "m4",
+  "version": "0.1.0",
+  "private": true,
+  "description": "M4 — Multi Model, Multi Modal.",
+  "packageManager": "pnpm@9.15.4",
+  "engines": {
+    "node": ">=20.11.0"
+  },
+  "scripts": {
+    "dev": "pnpm --filter @m4/web dev",
+    "build": "pnpm --filter @m4/web build",
+    "start": "pnpm --filter @m4/web start",
+    "lint": "pnpm -r --if-present lint",
+    "lint:fix": "pnpm -r --if-present lint:fix",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "typecheck": "pnpm -r --if-present typecheck",
+    "test": "pnpm -r --if-present test",
+    "test:e2e": "pnpm --filter @m4/web test:e2e",
+    "db:generate": "pnpm --filter @m4/db generate",
+    "db:migrate": "pnpm --filter @m4/db migrate",
+    "db:push": "pnpm --filter @m4/db push",
+    "db:studio": "pnpm --filter @m4/db studio",
+    "db:up": "docker compose -f docker/docker-compose.yml up -d",
+    "db:down": "docker compose -f docker/docker-compose.yml down",
+    "db:reset": "docker compose -f docker/docker-compose.yml down -v && pnpm db:up",
+    "check": "pnpm format:check && pnpm lint && pnpm typecheck && pnpm test"
+  },
+  "devDependencies": {
+    "@m4/config": "workspace:*",
+    "prettier": "^3.4.2",
+    "prettier-plugin-tailwindcss": "^0.6.11",
+    "typescript": "^5.7.3"
+  }
+}

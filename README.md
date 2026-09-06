@@ -72,7 +72,43 @@ M4 (monorepo)
 | Testing | Vitest (unit and integration) / Playwright (E2E) |
 
 > Infrastructure (AWS, GCP, and so on) is deferred. Local development with Docker Compose comes first.
-> Installing and setting up each of the technologies above is left to upcoming tasks.
+
+### Repository layout
+
+```
+m4/
+├── apps/
+│   └── web/          Next.js (App Router) — UI and the tRPC BFF
+├── packages/
+│   ├── db/           Prisma schema, migrations, shared PrismaClient
+│   └── config/       Shared ESLint and TypeScript configuration
+└── docker/           Local PostgreSQL (pgvector) via Docker Compose
+```
+
+## Getting Started
+
+Requires Node.js 20.11+ (see `.nvmrc`), [pnpm](https://pnpm.io) and Docker.
+
+```bash
+cp .env.example .env      # then fill in OPENAI_API_KEY and GEMINI_API_KEY
+pnpm install
+pnpm db:up                # start PostgreSQL in Docker
+pnpm db:generate          # generate the Prisma client
+pnpm db:push              # apply the schema
+pnpm dev                  # http://localhost:3000
+```
+
+| Command | What it does |
+| --- | --- |
+| `pnpm dev` | Run the Next.js dev server |
+| `pnpm build` | Production build |
+| `pnpm lint` / `pnpm format` | ESLint / Prettier |
+| `pnpm typecheck` | TypeScript, no emit |
+| `pnpm test` | Vitest (unit and integration) |
+| `pnpm test:e2e` | Playwright (E2E) |
+| `pnpm check` | Everything CI runs, in one go |
+| `pnpm db:up` / `pnpm db:down` / `pnpm db:reset` | Local PostgreSQL container |
+| `pnpm db:migrate` / `pnpm db:studio` | Prisma migrations / Studio |
 
 ## Design
 
@@ -84,6 +120,9 @@ M4 (monorepo)
 
 - Driven by **GitHub Spec Kit**, following **SDD (Spec Driven Development)** and **AI-DLC**
 - **Humans write zero lines of code** — the implementation is entirely AI-authored
+- Work starts from a **GitHub issue**, on a branch cut from `main`, and lands through a **pull request into `main`**
+- Branches are named `<type>/<issue-number>-<short-description>` — for example `feature/12-model-selector` or `chore/3-tech-stack-setup`
+- Detailed conventions for AI contributors live in [`CLAUDE.md`](CLAUDE.md)
 
 ## Out of Scope
 
