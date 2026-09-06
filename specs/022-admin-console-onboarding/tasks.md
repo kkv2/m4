@@ -456,7 +456,7 @@ needs the schema, the auth primitives and the procedure builders.
 
 **Independent test**: register a tenant with two users, sign in as one, and confirm the console reports two users and exactly one completed first login.
 
-- [ ] T028 [US6] Add integration tests asserting the console's summary semantics
+- [X] T028 [US6] Add integration tests asserting the console's summary semantics
 
   - **Purpose**: US6's value is that the reported state is correct, which is a test rather than a screen.
   - **Spec**: US6 · FR-013, FR-014, FR-020
@@ -464,6 +464,78 @@ needs the schema, the auth primitives and the procedure builders.
   - **Done when**: tests prove the user count matches the users registered; the chat count is `0` on an empty database; a registered user reads as not having completed first login, and the same user reads as completed after the onboarding procedures run; a reissue does not flip the flag back.
   - **Not in this task**: new screens or procedures — US6 is served by what T016, T019 and T020 already built.
   - **Depends on**: T020, T022.
+  - **Notes from implementation**:
+    - The tests live in a new file, `admin/console-summary.test.ts`, rather than
+      in the two the task named. They span four routers, and they deliberately
+      do *not* use the fixtures that set the first-login markers directly —
+      they register real users and drive them through the real onboarding
+      procedures. US6's value is not that the console can render a number, it is
+      that the number matches what happened.
+    - Writing them found a real defect and a spec inconsistency; see T028a and
+      T028b.
+
+- [X] T028a Read first-login state from the row, not from the request snapshot
+
+  - **Purpose**: `onboarding.replacePassword` decided whether the language step
+    was done by reading `ctx.user`, which is a snapshot taken when the request's
+    context was built.
+  - **Spec**: FR-033
+  - **Touches**: `apps/web/src/server/api/routers/onboarding.ts`, `apps/web/src/server/api/routers/account.ts`
+  - **Done when**: both onboarding steps check the row they are about to update;
+    the password policy's display name comes from that row too. The email
+    address still comes from the snapshot, because it is immutable.
+  - **Not in this task**: `protectedProcedure`'s first-login gate, which reads
+    the snapshot correctly — it decides whether *this* request may proceed, and
+    a user cannot finish first login midway through one.
+  - **Depends on**: T022.
+  - **Note**: not in the original breakdown. Two requests arriving together
+    would both have seen the same stale snapshot and both passed the check. It
+    happened to work in the browser because each HTTP request builds a fresh
+    context, which is exactly why a test that reuses one found it.
+
+- [X] T028b Correct User Story 6's acceptance scenarios
+
+  - **Purpose**: the scenarios said a user reads as having completed first login
+    once they confirm their language.
+  - **Spec**: US6, FR-033
+  - **Touches**: `specs/022-admin-console-onboarding/spec.md`
+  - **Done when**: the scenarios distinguish the two states an operator can
+    actually observe — language confirmed but password not yet replaced, and
+    both steps done — and the correction is recorded under Clarifications.
+  - **Depends on**: nothing.
+  - **Note**: the clarification session amended User Story 4 when it added the
+    password step, and left User Story 6 behind. Corrected here, in the issue
+    whose tests exposed it.
+
+- [X] T028c Remove a NUL byte from a committed source file
+
+  - **Purpose**: `create-operator.test.ts` contained a NUL byte, so git treated
+    it as binary and showed no diff for it in review.
+  - **Spec**: none — a defect.
+  - **Touches**: `apps/web/src/server/auth/cli/create-operator.test.ts`
+  - **Done when**: the file is text again, the assertion that used the stray
+    byte as a fallback is rewritten to fail loudly instead, and a scan of every
+    source file in the repository finds no others.
+  - **Depends on**: nothing.
+  - **Note**: introduced in issue #26 and merged. Harmless at runtime — the
+    fallback never fired — but the file has been undiffable ever since. Noticed
+    because this commit's `git diff --stat` reported it as `Bin`.
+
+- [X] T028d Stop two tests reaching into each other's rows
+
+  - **Purpose**: the suite had two ways for one test file to corrupt another's
+    state, both latent until this issue added enough parallel load to lose.
+  - **Spec**: plan.md "Test strategy"
+  - **Touches**: `apps/web/src/server/api/routers/auth.test.ts`, `apps/web/src/server/auth/cli/create-operator.test.ts`
+  - **Done when**: `auth.test.ts` ages only the two throttle keys it owns rather
+    than every row on the TENANT surface; `create-operator.test.ts` counts only
+    the address it owns rather than every operator in the database; the full
+    suite passes three times running.
+  - **Depends on**: nothing.
+  - **Note**: both are mine — the `updateMany` from issue #29, the global
+    `count()` from issue #26. Test files share one database by design (see
+    `fixtures.ts`), which works only if every assertion and every write is
+    scoped to rows that test created.
 
 ---
 
