@@ -413,7 +413,7 @@ needs the schema, the auth primitives and the procedure builders.
 
 **Independent test**: open settings from both the control and the shortcut, change each field, and confirm each persists across a fresh sign-in.
 
-- [ ] T026 [US5] Implement `apps/web/src/server/api/routers/account.ts` with tests
+- [X] T026 [US5] Implement `apps/web/src/server/api/routers/account.ts` with tests
 
   - **Purpose**: the settings procedures, shaped so acting on another user is unrepresentable.
   - **Spec**: US5 · FR-036 to FR-041, FR-023c
@@ -422,14 +422,31 @@ needs the schema, the auth primitives and the procedure builders.
   - **Not in this task**: changing an email address (FR-018).
   - **Depends on**: T011, T006, T008.
 
-- [ ] T027 [US5] Build the settings screen at `apps/web/src/app/(tenant)/settings/page.tsx` with its keyboard shortcut
+- [X] T027 [US5] Build the settings screen at `apps/web/src/app/(tenant)/(signed-in)/settings/page.tsx` with its keyboard shortcut
 
   - **Purpose**: FR-036's two ways in, and the four fields behind them.
   - **Spec**: US5 · FR-036, FR-037, FR-038, FR-040, FR-041
-  - **Touches**: `apps/web/src/app/(tenant)/settings/page.tsx`, its `.test.tsx`, and the shell in `apps/web/src/app/(tenant)/layout.tsx` for the settings control
+  - **Touches**: `apps/web/src/app/(tenant)/(signed-in)/settings/`, `apps/web/src/app/(tenant)/(signed-in)/settings-link.tsx`, and the shell in `apps/web/src/app/(tenant)/(signed-in)/layout.tsx`
   - **Done when**: a visible control and a keyboard shortcut both open settings; the user identifier and email address render as non-editable values; display name, language and password can each be changed; a language change takes effect immediately; a rejected password names the failed rule.
   - **Not in this task**: making the shortcut configurable, or a non-macOS variant beyond a sensible default — both are Open Questions in the spec.
   - **Depends on**: T026, T023.
+  - **Notes from implementation**:
+    - The paths above are corrected: issue #29 split the tenant surface into
+      three route groups, so settings lives under `(signed-in)/`.
+    - The identifier and the address are rendered as text in a `<dl>`, not as
+      disabled inputs. A disabled input still reads as something you might have
+      been allowed to change; FR-037 says these cannot be, so they are not
+      fields at all.
+    - The shortcut is ⌘ + , on macOS and Ctrl + , elsewhere, and it stands down
+      while the user is typing in a field. The visible control is always there
+      for anyone whose browser has already claimed the combination.
+    - Changing the language calls the procedure on selection and then
+      `router.refresh()`. FR-040 wants it immediate, and the language is chosen
+      by Server Components, so they have to re-render.
+    - `account.test.ts` asserts the exact input keys of all four procedures.
+      None accepts a user id, which is how FR-041 holds: acting on somebody else
+      is not a check that could be forgotten, it is a request that cannot be
+      expressed.
 
 ---
 
