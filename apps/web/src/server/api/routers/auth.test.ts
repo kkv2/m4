@@ -123,7 +123,8 @@ describe("auth.signIn", () => {
 
   it("throttles repeated failures, then releases once the window passes", async () => {
     const { user, password } = await createTestUser({ firstLoginCompleted: true });
-    const { caller } = await createTestCaller({ client: `10.7.7.${uniqueSuffix()}` });
+    const client = `10.7.7.${uniqueSuffix()}`;
+    const { caller } = await createTestCaller({ client });
 
     for (let i = 0; i < FAILURE_THRESHOLD; i += 1) {
       await asError(caller.auth.signIn({ email: user.email, password: "wrong" }));
@@ -131,9 +132,11 @@ describe("auth.signIn", () => {
     const blocked = await asError(caller.auth.signIn({ email: user.email, password }));
     expect(blocked.code).toBe("TOO_MANY_REQUESTS");
 
-    // Age the window rather than waiting fifteen minutes.
+    // Age the window rather than waiting fifteen minutes — scoped to the two
+    // keys this test owns. Ageing the whole surface would reach into rows other
+    // test files are relying on, and did.
     await prisma.signInThrottle.updateMany({
-      where: { surface: SignInSurface.TENANT },
+      where: { surface: SignInSurface.TENANT, key: { in: [user.email, client] } },
       data: { windowStartedAt: new Date(Date.now() - WINDOW_MS - 1000) },
     });
 

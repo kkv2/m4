@@ -17,7 +17,10 @@ import { createTRPCRouter, onboardingProcedure } from "../trpc";
  * steps are done.
  *
  * Each step refuses if it is already finished, so a replayed request cannot
- * rewind the state machine.
+ * rewind the state machine. That check reads the row it is about to update
+ * rather than `ctx.user`, which is a snapshot taken when the request's context
+ * was built: two requests arriving together would both see the same stale
+ * snapshot and both pass.
  */
 
 /** The failure a caller gets back, so the screen can name the rule (FR-032b). */
@@ -35,7 +38,11 @@ export const onboardingRouter = createTRPCRouter({
   confirmLanguage: onboardingProcedure
     .input(z.object({ language: z.enum(LANGUAGES) }))
     .mutation(async ({ ctx, input }): Promise<{ next: "password" }> => {
-      if (ctx.user.languageConfirmedAt !== null) {
+      const current = await ctx.prisma.user.findUniqueOrThrow({
+        where: { id: ctx.user.id },
+        select: { languageConfirmedAt: true },
+      });
+      if (current.languageConfirmedAt !== null) {
         throw new TRPCError({ code: "BAD_REQUEST", message: "Language is already confirmed." });
       }
 
@@ -50,27 +57,35 @@ export const onboardingRouter = createTRPCRouter({
   replacePassword: onboardingProcedure
     .input(z.object({ newPassword: z.string().min(1) }))
     .mutation(async ({ ctx, input }): Promise<{ next: "app" }> => {
-      if (ctx.user.languageConfirmedAt === null) {
+      const current = await ctx.prisma.user.findUniqueOrThrow({
+        where: { id: ctx.user.id },
+        select: {
+          passwordHash: true,
+          languageConfirmedAt: true,
+          mustChangePassword: true,
+          name: true,
+        },
+      });
+
+      if (current.languageConfirmedAt === null) {
         throw new TRPCError({ code: "BAD_REQUEST", message: "Confirm your language first." });
       }
-      if (!ctx.user.mustChangePassword) {
+      if (!current.mustChangePassword) {
         throw new TRPCError({ code: "BAD_REQUEST", message: "Password is already yours." });
       }
 
       // FR-032: it must differ from the one the operator issued. Compared
       // against the stored hash rather than a remembered plaintext, because
       // there is no remembered plaintext.
-      const current = await ctx.prisma.user.findUniqueOrThrow({
-        where: { id: ctx.user.id },
-        select: { passwordHash: true },
-      });
       if (await verifyPassword(input.newPassword, current.passwordHash)) {
         rejectPassword({ rule: "same-as-issued" });
       }
 
       const verdict = checkPasswordPolicy(input.newPassword, {
+        // The address is immutable, so the snapshot is always right for it. The
+        // display name is not, so it comes from the row.
         email: ctx.user.email,
-        displayName: ctx.user.name,
+        displayName: current.name,
       });
       if (!verdict.ok) {
         rejectPassword(verdict.failure);

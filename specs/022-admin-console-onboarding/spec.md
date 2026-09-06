@@ -67,6 +67,7 @@ attribution and is a hard prerequisite for the LLM chat work (issue #23).
 ### Session 2026-09-06
 
 - Q: How does a tenant user identify which tenant they belong to at sign-in, given the same email address could exist in more than one tenant? → A: Email addresses are unique across the whole platform; sign-in is email and password alone, with no tenant identifier.
+- Correction (2026-09-07): User Story 6's scenarios said a user reads as having completed first login once they confirm their language. That was left behind when the clarification below added the password replacement step — FR-033 makes first login complete only once both steps are done. The scenarios now say so, and split into the two states the operator can actually observe. Found while writing issue #31's tests.
 - Q: What language do unauthenticated screens use, before any account language is known? → A: The operator sign-in screen stays Japanese-only; the tenant sign-in screen opens in Japanese with a control to switch to English, and the choice is remembered on that device.
 - Q: What happens to a user's other sessions when their password changes, and how long does a session last? → A: Changing or reissuing a password ends every other session for that user immediately, leaving only the session that made the change; sessions expire 30 days after last access, sliding.
 - Q: How should the system respond to repeated failed sign-in attempts? → A: Throttle by account and by source together — refuse further attempts for a cooling-off period once a threshold is crossed, releasing automatically; never lock an account permanently.
@@ -271,9 +272,12 @@ and confirm the console reports two users and exactly one completed first login.
    a blank.
 3. **Given** a user who has never signed in, **When** the operator views the user
    list, **Then** that user is shown as not having completed first login.
-4. **Given** that same user after they sign in and confirm their language,
-   **When** the operator views the list again, **Then** the user is shown as
-   having completed first login.
+4. **Given** that same user after they confirm their language but before they
+   replace their password, **When** the operator views the list again, **Then**
+   the user is still shown as not having completed first login.
+5. **Given** that same user once both first-login steps are done, **When** the
+   operator views the list again, **Then** the user is shown as having completed
+   first login.
 
 ---
 

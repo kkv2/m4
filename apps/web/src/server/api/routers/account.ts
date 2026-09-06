@@ -60,7 +60,7 @@ export const accountRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       const current = await ctx.prisma.user.findUniqueOrThrow({
         where: { id: ctx.user.id },
-        select: { passwordHash: true },
+        select: { passwordHash: true, name: true },
       });
 
       if (!(await verifyPassword(input.currentPassword, current.passwordHash))) {
@@ -72,8 +72,10 @@ export const accountRouter = createTRPCRouter({
       }
 
       const verdict = checkPasswordPolicy(input.newPassword, {
+        // The address is immutable; the display name is not, so it comes from
+        // the row rather than from the request's snapshot of it.
         email: ctx.user.email,
-        displayName: ctx.user.name,
+        displayName: current.name,
       });
       if (!verdict.ok) {
         rejectPassword(verdict.failure.rule);
