@@ -52,6 +52,11 @@ export const en: Messages = {
     changePassword: "Change password",
     saved: "Your changes have been saved.",
   },
+  app: {
+    welcome: "Welcome",
+    nothingHereYet: "Chat is coming soon. Your sign-in is complete.",
+    settings: "Settings",
+  },
   language: {
     ja: "日本語",
     en: "English",

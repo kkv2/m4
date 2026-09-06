@@ -1,3 +1,5 @@
+import { MINIMUM_PASSWORD_LENGTH } from "~/lib/password-rules";
+
 import { COMMON_PASSWORDS } from "./common-passwords";
 
 /**
@@ -5,8 +7,11 @@ import { COMMON_PASSWORDS } from "./common-passwords";
  * deliberately absent, following current NIST SP 800-63B guidance — requiring a
  * mix of character classes pushes people towards predictable patterns like
  * "Password1!" without making the result harder to guess.
+ *
+ * The length lives in `~/lib/` because the screens quote it in their messages
+ * and must not import server code to do so.
  */
-export const MINIMUM_PASSWORD_LENGTH = 12;
+export { MINIMUM_PASSWORD_LENGTH };
 
 /** Which rule a password broke. FR-032b requires the message to name it. */
 export type PasswordPolicyFailure =

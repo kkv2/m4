@@ -331,7 +331,7 @@ needs the schema, the auth primitives and the procedure builders.
 
 **Independent test**: sign in with fresh credentials, complete both steps, sign out, and confirm the new password works and the issued one does not.
 
-- [ ] T021 [US4] Implement `apps/web/src/server/api/routers/auth.ts` with tests
+- [X] T021 [US4] Implement `apps/web/src/server/api/routers/auth.ts` with tests
 
   - **Purpose**: tenant sign-in, sign-out, and the identity the shell displays.
   - **Spec**: US4 · FR-021, FR-022, FR-022a-e, FR-023b, FR-041
@@ -340,7 +340,7 @@ needs the schema, the auth primitives and the procedure builders.
   - **Not in this task**: the onboarding transitions themselves.
   - **Depends on**: T011, T009.
 
-- [ ] T022 [US4] Implement `apps/web/src/server/api/routers/onboarding.ts` with tests
+- [X] T022 [US4] Implement `apps/web/src/server/api/routers/onboarding.ts` with tests
 
   - **Purpose**: the two first-login transitions, and the point where first login becomes complete.
   - **Spec**: US4 · FR-027 to FR-035, FR-023c
@@ -349,7 +349,7 @@ needs the schema, the auth primitives and the procedure builders.
   - **Not in this task**: the screens.
   - **Depends on**: T021, T006, T005.
 
-- [ ] T023 [US4] Add the tenant route group at `apps/web/src/app/(tenant)/`, moving the existing root page into it
+- [X] T023 [US4] Add the tenant route group at `apps/web/src/app/(tenant)/`, moving the existing root page into it
 
   - **Purpose**: the application shell and its gate — and the one deliberate behaviour change in this feature.
   - **Spec**: US4 · FR-034, FR-039, FR-041, FR-044 · plan.md "Compatibility"
@@ -358,7 +358,7 @@ needs the schema, the auth primitives and the procedure builders.
   - **Not in this task**: the sign-in or welcome screens themselves, `e2e/home.spec.ts` (that is T029).
   - **Depends on**: T021, T012, T013.
 
-- [ ] T024 [US4] Build the tenant sign-in screen at `apps/web/src/app/(tenant)/sign-in/page.tsx`
+- [X] T024 [US4] Build the tenant sign-in screen at `apps/web/src/app/(tenant)/sign-in/page.tsx`
 
   - **Purpose**: the only unauthenticated screen a tenant user sees, in either language.
   - **Spec**: US4 · FR-021, FR-022, FR-043a, FR-043b, FR-043c
@@ -367,7 +367,7 @@ needs the schema, the auth primitives and the procedure builders.
   - **Not in this task**: the first-login steps; the account language overriding this preference (that is T023's shell).
   - **Depends on**: T023, T021.
 
-- [ ] T025 [US4] Build the first-login screen at `apps/web/src/app/(tenant)/welcome/page.tsx`
+- [X] T025 [US4] Build the first-login screen at `apps/web/src/app/(tenant)/welcome/page.tsx`
 
   - **Purpose**: the two blocking steps, in order, resumable.
   - **Spec**: US4 · FR-027 to FR-034
@@ -375,6 +375,35 @@ needs the schema, the auth primitives and the procedure builders.
   - **Done when**: the language step pre-selects the operator-assigned language and the password step follows it in the chosen language; a rejected password names the rule that failed; a user who abandons the flow resumes at the unfinished step; a user who has completed first login is redirected away.
   - **Not in this task**: changing a password from settings (that is US5).
   - **Depends on**: T022, T023.
+  - **Notes from implementation**:
+    - The tenant surface needs **three** route groups, not two:
+      `(anonymous)/sign-in`, `(onboarding)/welcome` and `(signed-in)/`. The
+      application layout redirects an unfinished user to `/welcome`, so welcome
+      cannot live under it — a gate that redirects to a page it also guards is
+      an infinite redirect.
+    - `MINIMUM_PASSWORD_LENGTH` and the sign-in language cookie's name moved to
+      `src/lib/`. The screens quote both, and a Client Component importing
+      `~/server/` would drag the deny-list and the cookie helpers into the
+      browser bundle.
+    - The language step previews its own choice: picking English re-renders the
+      step in English before it is confirmed.
+
+- [X] T025a Assert the server boundary rather than trusting it
+
+  - **Purpose**: `CLAUDE.md` states that server-only code never reaches a Client
+    Component, and nothing checked it.
+  - **Spec**: plan.md "Layering" · CLAUDE.md "Boundaries"
+  - **Touches**: `apps/web/src/server-boundary.test.ts`
+  - **Done when**: a test scans every `"use client"` file and fails if it imports
+    `~/server/` or `@m4/db` at runtime; type-only imports are allowed, because
+    they are erased and are how tRPC gives the client its `AppRouter` type.
+  - **Not in this task**: an ESLint rule — a test reports the offending file and
+    what to do about it, which is what was wanted here.
+  - **Depends on**: T023.
+  - **Note**: not in the original breakdown. Issue #27 found a Client Component
+    importing `@m4/db`, caught only because Prisma cannot be bundled; this issue
+    then found one importing the cookie helpers, which *would* have bundled
+    silently. Two in two issues is a pattern, so it is now checked.
 
 ---
 
@@ -440,7 +469,7 @@ needs the schema, the auth primitives and the procedure builders.
 
 ## Phase 10: Polish & cross-cutting
 
-- [ ] T030 [P] Rewrite `apps/web/e2e/home.spec.ts` for the authenticated root
+- [X] T030 [P] Rewrite `apps/web/e2e/home.spec.ts` for the authenticated root
 
   - **Purpose**: the existing spec asserts marketing copy at `/` that no longer lives there.
   - **Spec**: plan.md "Compatibility"
@@ -448,6 +477,23 @@ needs the schema, the auth primitives and the procedure builders.
   - **Done when**: the spec asserts that an unauthenticated visit to `/` lands on the sign-in screen; nothing asserts the old tagline.
   - **Not in this task**: the onboarding or console flows.
   - **Depends on**: T024.
+  - **Note**: done in issue #29 rather than here. #29 is the change that moved
+    the root page, so it is the change that broke this spec — leaving it red for
+    a later issue would have meant merging a red `main`.
+
+- [X] T030a Restore Prisma client generation in the E2E job
+
+  - **Purpose**: unbreak CI.
+  - **Spec**: research.md R9
+  - **Touches**: `.github/workflows/ci.yml`
+  - **Done when**: the E2E job runs `pnpm db:generate` before `pnpm db:deploy`.
+  - **Depends on**: nothing.
+  - **Note**: not in the original breakdown, and a defect of my own making.
+    Issue #27 switched the E2E job from `db:push` to `db:deploy`. `db:push`
+    generates the client as a side effect and `db:deploy` does not, so the
+    client stopped being generated there. It stayed latent until #29 put a
+    database-reading layout on the path for `/`, at which point the dev server
+    could not start at all.
 
 - [ ] T031 [P] Add `apps/web/e2e/onboarding.spec.ts`
 

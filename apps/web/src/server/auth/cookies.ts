@@ -1,3 +1,8 @@
+import {
+  SIGN_IN_LANGUAGE_COOKIE,
+  SIGN_IN_LANGUAGE_MAX_AGE_SECONDS,
+} from "~/lib/sign-in-language-cookie";
+
 /**
  * Cookie names and attributes, in one place so no route invents its own.
  *
@@ -14,16 +19,14 @@ export const TENANT_SESSION_COOKIE = "m4_session";
 export const OPERATOR_SESSION_COOKIE = "m4_operator_session";
 
 /**
- * The device-level language preference on the tenant sign-in screen (FR-043b).
- * Not httpOnly: the client toggles it. It is a display preference, never a
- * credential, and the account language supersedes it once signed in (FR-043d).
+ * Re-exported so server code has one place to look for cookie names. The name
+ * itself is declared in `~/lib/` because the sign-in form writes it from the
+ * browser, and a Client Component must not import server code.
  */
-export const SIGN_IN_LANGUAGE_COOKIE = "m4_signin_language";
+export { SIGN_IN_LANGUAGE_COOKIE };
 
 /** FR-023a: sessions expire 30 days after last use, sliding. */
 export const SESSION_MAX_AGE_SECONDS = 60 * 60 * 24 * 30;
-
-const SIGN_IN_LANGUAGE_MAX_AGE_SECONDS = 60 * 60 * 24 * 365;
 
 function isSecureContext(): boolean {
   return process.env.NODE_ENV === "production";
