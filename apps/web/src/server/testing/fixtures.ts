@@ -2,6 +2,8 @@ import { randomBytes } from "node:crypto";
 
 import { Language, type Operator, type Tenant, type User, prisma } from "@m4/db";
 
+import { createTRPCContext } from "~/server/api/context";
+import { createCaller } from "~/server/api/root";
 import { hashPassword } from "~/server/auth/password";
 
 /**
@@ -83,4 +85,47 @@ export async function createTestOperator(email?: string): Promise<TestOperator> 
   });
 
   return { operator, password };
+}
+
+/**
+ * Callers for router tests.
+ *
+ * Procedures are exercised through `createCaller` rather than through the UI:
+ * the acceptance scenarios are statements about procedures, and the properties
+ * that matter most — tenant isolation, the operator boundary — must hold even
+ * when nobody is driving a screen.
+ */
+
+export interface CallerOptions {
+  /** Cookie header to present, as `name=value` pairs. */
+  cookie?: string;
+  /** The calling client, for throttling. Defaults to a unique address so that
+   *  tests running in parallel do not trip each other's client counter. */
+  client?: string;
+}
+
+export interface TestCaller {
+  caller: ReturnType<typeof createCaller>;
+  resHeaders: Headers;
+}
+
+export async function createTestCaller(options: CallerOptions = {}): Promise<TestCaller> {
+  const headers = new Headers();
+  if (options.cookie) headers.set("cookie", options.cookie);
+  headers.set("x-forwarded-for", options.client ?? `192.0.2.${uniqueSuffix()}`);
+
+  const resHeaders = new Headers();
+  const context = await createTRPCContext({ headers, resHeaders });
+
+  return { caller: createCaller(context), resHeaders };
+}
+
+/** Every Set-Cookie value a call emitted. */
+export function setCookieValues(resHeaders: Headers): string[] {
+  return resHeaders.getSetCookie();
+}
+
+/** A Cookie request header carrying one cookie. */
+export function cookieHeader(name: string, value: string): string {
+  return `${name}=${encodeURIComponent(value)}`;
 }

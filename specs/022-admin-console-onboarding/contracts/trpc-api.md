@@ -123,11 +123,18 @@ per FR-004.
 | Name | Set by | Attributes |
 | --- | --- | --- |
 | `m4_session` | `auth.signIn` | `httpOnly`, `SameSite=Lax`, `Path=/`, `Secure` outside development, `Max-Age` 30 days |
-| `m4_operator_session` | `operatorAuth.signIn` | same, `Path=/admin` |
+| `m4_operator_session` | `operatorAuth.signIn` | same, also `Path=/` — see below |
 | `m4_signin_language` | the tenant sign-in screen | **not** `httpOnly` (the client toggles it), `SameSite=Lax`, one year |
 
-The first two carry opaque tokens (R1). The third carries `ja` or `en` and is the
-device-level preference of FR-043b — it is a display preference, never a
+The first two carry opaque tokens (R1). Both are scoped to `Path=/`, not to
+their surface: the BFF lives at `/api/trpc`, so a cookie scoped to `/admin`
+would never reach the procedures the console calls. The operator/tenant boundary
+is held by the separate cookie names and separate session tables (R7), which is
+where it belongs — path scoping would have been decoration that happened to
+break the application. (Corrected during implementation of issue #27, after the
+console signed in successfully and then got `UNAUTHORIZED` from every procedure.)
+
+The third carries `ja` or `en` and is the device-level preference of FR-043b — it is a display preference, never a
 credential, and FR-043d requires the account language to win once signed in.
 
 `createTRPCContext` gains a `resHeaders` field so procedures can emit

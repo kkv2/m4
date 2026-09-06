@@ -1,14 +1,24 @@
-import { Language } from "@m4/db";
-
 import { en } from "./messages/en";
 import { ja, type Messages } from "./messages/ja";
 
 export type { Messages };
-export { Language };
+
+/**
+ * The languages M4 speaks.
+ *
+ * Declared here rather than imported from `@m4/db`, because this module is
+ * reached from Client Components and importing the database package would drag
+ * Prisma and node-postgres into the browser bundle. Prisma generates its
+ * `Language` enum as the same `"JA" | "EN"` union, so the two are structurally
+ * identical and server code can pass one straight in.
+ */
+export const LANGUAGES = ["JA", "EN"] as const;
+
+export type Language = (typeof LANGUAGES)[number];
 
 const MESSAGES: Record<Language, Messages> = {
-  [Language.JA]: ja,
-  [Language.EN]: en,
+  JA: ja,
+  EN: en,
 };
 
 /**
@@ -22,12 +32,12 @@ export function getMessages(language: Language): Messages {
 
 /** The two-letter tag for `<html lang>` and the sign-in language cookie. */
 export function languageTag(language: Language): "ja" | "en" {
-  return language === Language.EN ? "en" : "ja";
+  return language === "EN" ? "en" : "ja";
 }
 
 /** Parse a two-letter tag back, falling back to Japanese (FR-043a). */
 export function languageFromTag(tag: string | null | undefined): Language {
-  return tag === "en" ? Language.EN : Language.JA;
+  return tag === "en" ? "EN" : "JA";
 }
 
 /**

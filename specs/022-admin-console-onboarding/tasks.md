@@ -209,7 +209,7 @@ needs the schema, the auth primitives and the procedure builders.
 
 **Independent test**: sign in with the bootstrapped credentials, register a tenant, see it listed with its identifier.
 
-- [ ] T015 [US2] Implement `apps/web/src/server/api/routers/operator-auth.ts` with tests
+- [X] T015 [US2] Implement `apps/web/src/server/api/routers/operator-auth.ts` with tests
 
   - **Purpose**: operator sign-in, sign-out and identity.
   - **Spec**: US2 · FR-007, FR-008, FR-009, FR-022a-e, FR-023b
@@ -218,7 +218,7 @@ needs the schema, the auth primitives and the procedure builders.
   - **Not in this task**: any tenant or user management procedure.
   - **Depends on**: T011, T009.
 
-- [ ] T016 [US2] Implement `apps/web/src/server/api/routers/admin/tenants.ts` with tests
+- [X] T016 [US2] Implement `apps/web/src/server/api/routers/admin/tenants.ts` with tests
 
   - **Purpose**: register and review tenants, with the counts FR-013 asks for.
   - **Spec**: US2 · FR-010, FR-011, FR-012, FR-013, FR-014
@@ -227,7 +227,7 @@ needs the schema, the auth primitives and the procedure builders.
   - **Not in this task**: user management (that is US3), any deletion (FR-046).
   - **Depends on**: T011.
 
-- [ ] T017 [US2] Add the operator route group at `apps/web/src/app/(operator)/admin/layout.tsx` and `sign-in/page.tsx`
+- [X] T017 [US2] Add the operator route group at `apps/web/src/app/(operator)/admin/layout.tsx` and `sign-in/page.tsx`
 
   - **Purpose**: the console's shell and its gate.
   - **Spec**: US2 · FR-006, FR-007, FR-009, FR-044
@@ -236,7 +236,7 @@ needs the schema, the auth primitives and the procedure builders.
   - **Not in this task**: the tenant list or any tenant screen.
   - **Depends on**: T015, T013.
 
-- [ ] T018 [US2] Build the tenant list and registration screen at `apps/web/src/app/(operator)/admin/page.tsx`
+- [X] T018 [US2] Build the tenant list and registration screen at `apps/web/src/app/(operator)/admin/page.tsx`
 
   - **Purpose**: the console's home — register a tenant, see every tenant with its identifier and counts.
   - **Spec**: US2 · FR-010 to FR-014
@@ -244,6 +244,49 @@ needs the schema, the auth primitives and the procedure builders.
   - **Done when**: the registration form pre-selects Japanese; an empty display name is refused with a message; the list shows each tenant's identifier, user count and chat count; an empty list shows an empty state rather than an error; the component test asserts the Japanese default and the validation message.
   - **Not in this task**: the tenant detail screen.
   - **Depends on**: T016, T017.
+  - **Notes from implementation**:
+    - The route group is split in two — `(operator)/(signed-in)/` and
+      `(operator)/(anonymous)/` — because a gate that redirects to a page it
+      also guards is an infinite redirect. Route groups do not appear in the
+      URL, so both still resolve under `/admin`.
+    - The screens are Client Components calling tRPC over HTTP. Sign-in has to
+      be: the session cookie is set from `ctx.resHeaders`, and a server-side
+      `createCaller` has no HTTP response to attach it to. The reads follow suit
+      rather than giving the same data two paths.
+    - `pnpm typecheck` now runs `next typegen` first. `typedRoutes` derives
+      route literal types from the route tree, which does not exist until
+      something generates it — the first `redirect("/admin")` made that visible.
+    - Operator console copy lives in `src/i18n/messages/admin.ts`, outside the
+      `Messages` type. That type is the contract every language must satisfy,
+      and the console is Japanese-only (FR-006); adding console keys to it would
+      oblige `en.ts` to translate screens never shown in English.
+
+- [X] T018a Fix three defects that only running the application revealed
+
+  - **Purpose**: none of these was visible to lint, typecheck or the unit tests.
+  - **Spec**: FR-006, FR-007, FR-022 · plan.md "Layering"
+  - **Touches**: `apps/web/src/server/auth/cookies.ts`, both form components, `.github/workflows/ci.yml`, `specs/022-admin-console-onboarding/contracts/trpc-api.md`
+  - **Done when**:
+    1. **The operator cookie is `Path=/`, not `Path=/admin`.** The contract
+       specified `/admin`, which looked tidier and meant the cookie never
+       reached `/api/trpc` — the console signed in successfully and then got
+       `UNAUTHORIZED` from every procedure. The operator/tenant boundary is held
+       by the separate cookie names and session tables, not by path scoping. The
+       contract is corrected too.
+    2. **Both forms are `method="post"`.** A form with no method submits as GET.
+       With JavaScript not yet hydrated, the sign-in form put the password in
+       the query string — and from there into history, the server log and the
+       Referer header.
+    3. **CI runs `pnpm build`.** A Client Component had imported `@m4/db`,
+       dragging Prisma and node-postgres into the browser bundle. Lint,
+       typecheck and every test passed; only the build failed. The server
+       boundary is a stated invariant with no other automated guard.
+  - **Not in this task**: making `~/lib/trpc-client` use a relative URL instead
+    of `NEXT_PUBLIC_APP_URL` — a real latent limitation, but pre-existing and
+    not in this issue's way.
+  - **Depends on**: T017, T018.
+  - **Note**: not in the original breakdown; all three were found by signing in
+    to the running console and watching what happened.
 
 ---
 

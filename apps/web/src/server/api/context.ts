@@ -63,7 +63,7 @@ function clientAddressFrom(headers: Headers): string | null {
   return headers.get("x-real-ip")?.trim() ?? null;
 }
 
-async function resolveTenantUser(headers: Headers): Promise<SessionUser | null> {
+export async function resolveTenantUser(headers: Headers): Promise<SessionUser | null> {
   const token = readCookie(headers, TENANT_SESSION_COOKIE);
   if (!token) return null;
 
@@ -88,7 +88,7 @@ async function resolveTenantUser(headers: Headers): Promise<SessionUser | null> 
   return { ...user, sessionTokenHash: resolved.tokenHash };
 }
 
-async function resolveOperator(headers: Headers): Promise<SessionOperator | null> {
+export async function resolveOperator(headers: Headers): Promise<SessionOperator | null> {
   const token = readCookie(headers, OPERATOR_SESSION_COOKIE);
   if (!token) return null;
 

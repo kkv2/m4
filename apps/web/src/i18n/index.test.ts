@@ -1,4 +1,3 @@
-import { Language } from "@m4/db";
 import { describe, expect, it } from "vitest";
 
 import { format, getMessages, languageFromTag, languageTag } from "./index";
@@ -15,8 +14,8 @@ function keyPaths(value: object, prefix = ""): string[] {
 
 describe("getMessages", () => {
   it("returns the dictionary for each language", () => {
-    expect(getMessages(Language.JA)).toBe(ja);
-    expect(getMessages(Language.EN)).toBe(en);
+    expect(getMessages("JA")).toBe(ja);
+    expect(getMessages("EN")).toBe(en);
   });
 });
 
@@ -45,14 +44,14 @@ describe("the two dictionaries", () => {
 
 describe("language tags", () => {
   it("round-trip", () => {
-    expect(languageFromTag(languageTag(Language.JA))).toBe(Language.JA);
-    expect(languageFromTag(languageTag(Language.EN))).toBe(Language.EN);
+    expect(languageFromTag(languageTag("JA"))).toBe("JA");
+    expect(languageFromTag(languageTag("EN"))).toBe("EN");
   });
 
   it("fall back to Japanese for anything unrecognised, per FR-043a", () => {
-    expect(languageFromTag(null)).toBe(Language.JA);
-    expect(languageFromTag(undefined)).toBe(Language.JA);
-    expect(languageFromTag("fr")).toBe(Language.JA);
+    expect(languageFromTag(null)).toBe("JA");
+    expect(languageFromTag(undefined)).toBe("JA");
+    expect(languageFromTag("fr")).toBe("JA");
   });
 });
 

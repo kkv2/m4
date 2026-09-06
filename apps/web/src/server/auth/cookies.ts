@@ -72,9 +72,15 @@ export function serialiseTenantSessionCookie(token: string): string {
   });
 }
 
+/**
+ * Path is `/` rather than `/admin`, even though the console lives there. The
+ * BFF is at `/api/trpc`, so a cookie scoped to `/admin` would never reach the
+ * procedures the console calls. The operator/tenant boundary is held by the
+ * separate cookie names and separate session tables, not by path scoping.
+ */
 export function serialiseOperatorSessionCookie(token: string): string {
   return serialise(OPERATOR_SESSION_COOKIE, token, {
-    path: "/admin",
+    path: "/",
     maxAgeSeconds: SESSION_MAX_AGE_SECONDS,
     httpOnly: true,
   });
@@ -88,8 +94,7 @@ export function serialiseSignInLanguageCookie(language: "ja" | "en"): string {
   });
 }
 
-/** Expire a cookie by name, using the same Path it was set with. */
+/** Expire a cookie by name. Every cookie here is set at the root path. */
 export function serialiseClearedCookie(name: string): string {
-  const path = name === OPERATOR_SESSION_COOKIE ? "/admin" : "/";
-  return serialise(name, "", { path, maxAgeSeconds: 0, httpOnly: true });
+  return serialise(name, "", { path: "/", maxAgeSeconds: 0, httpOnly: true });
 }
