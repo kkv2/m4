@@ -131,6 +131,11 @@ pnpm dev                  # http://localhost:3000
 - Branches are named `<type>/<issue-number>-<short-description>` — for example `feature/12-model-selector` or `chore/3-tech-stack-setup`
 - Detailed conventions for AI contributors live in [`CLAUDE.md`](CLAUDE.md)
 
+## License
+
+[MIT](LICENSE). This repository is a personal proof of concept, built to catch up
+on the stack it uses.
+
 ## Out of Scope
 
 - No language support beyond Japanese and English
