@@ -469,7 +469,7 @@ needs the schema, the auth primitives and the procedure builders.
 
 ## Phase 10: Polish & cross-cutting
 
-- [ ] T030 [P] Rewrite `apps/web/e2e/home.spec.ts` for the authenticated root
+- [X] T030 [P] Rewrite `apps/web/e2e/home.spec.ts` for the authenticated root
 
   - **Purpose**: the existing spec asserts marketing copy at `/` that no longer lives there.
   - **Spec**: plan.md "Compatibility"
@@ -477,6 +477,23 @@ needs the schema, the auth primitives and the procedure builders.
   - **Done when**: the spec asserts that an unauthenticated visit to `/` lands on the sign-in screen; nothing asserts the old tagline.
   - **Not in this task**: the onboarding or console flows.
   - **Depends on**: T024.
+  - **Note**: done in issue #29 rather than here. #29 is the change that moved
+    the root page, so it is the change that broke this spec — leaving it red for
+    a later issue would have meant merging a red `main`.
+
+- [X] T030a Restore Prisma client generation in the E2E job
+
+  - **Purpose**: unbreak CI.
+  - **Spec**: research.md R9
+  - **Touches**: `.github/workflows/ci.yml`
+  - **Done when**: the E2E job runs `pnpm db:generate` before `pnpm db:deploy`.
+  - **Depends on**: nothing.
+  - **Note**: not in the original breakdown, and a defect of my own making.
+    Issue #27 switched the E2E job from `db:push` to `db:deploy`. `db:push`
+    generates the client as a side effect and `db:deploy` does not, so the
+    client stopped being generated there. It stayed latent until #29 put a
+    database-reading layout on the path for `/`, at which point the dev server
+    could not start at all.
 
 - [ ] T031 [P] Add `apps/web/e2e/onboarding.spec.ts`
 

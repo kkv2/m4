@@ -127,6 +127,12 @@ jobs:
       - name: Install dependencies
         run: pnpm install
 
+      # `db:deploy` only applies migrations. `db:push`, which this replaced,
+      # generated the client as a side effect — so generating it has to be said
+      # out loud here, as the verify job already does.
+      - name: Generate Prisma client
+        run: pnpm db:generate
+
       - name: Apply database migrations
         run: pnpm db:deploy
 
