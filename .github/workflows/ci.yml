@@ -28,7 +28,17 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version-file: .nvmrc
-          cache: pnpm
+
+      # setup-node's built-in pnpm cache requires a lockfile to exist, which
+      # is not true on a bootstrap run. Cache the pnpm store directly instead.
+      - name: Locate the pnpm store
+        run: echo "PNPM_STORE_PATH=$(pnpm store path --silent)" >> "$GITHUB_ENV"
+
+      - uses: actions/cache@v4
+        with:
+          path: ${{ env.PNPM_STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('pnpm-lock.yaml', '**/package.json') }}
+          restore-keys: ${{ runner.os }}-pnpm-store-
 
       # pnpm turns on --frozen-lockfile by itself in CI once pnpm-lock.yaml is
       # committed, so this stays correct after the first install.
@@ -75,7 +85,17 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version-file: .nvmrc
-          cache: pnpm
+
+      # setup-node's built-in pnpm cache requires a lockfile to exist, which
+      # is not true on a bootstrap run. Cache the pnpm store directly instead.
+      - name: Locate the pnpm store
+        run: echo "PNPM_STORE_PATH=$(pnpm store path --silent)" >> "$GITHUB_ENV"
+
+      - uses: actions/cache@v4
+        with:
+          path: ${{ env.PNPM_STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('pnpm-lock.yaml', '**/package.json') }}
+          restore-keys: ${{ runner.os }}-pnpm-store-
 
       # pnpm turns on --frozen-lockfile by itself in CI once pnpm-lock.yaml is
       # committed, so this stays correct after the first install.

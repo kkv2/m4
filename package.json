@@ -5,7 +5,7 @@
   "description": "M4 — Multi Model, Multi Modal.",
   "packageManager": "pnpm@9.15.4",
   "engines": {
-    "node": ">=20.11.0"
+    "node": ">=22.11.0"
   },
   "scripts": {
     "dev": "pnpm --filter @m4/web dev",
