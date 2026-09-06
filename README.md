@@ -33,11 +33,12 @@ is turned into shared, accumulated knowledge. The effort of hunting for it is ab
 
 ## Tech Stack
 
-TypeScript everywhere. Backend and frontend live together in this single repository as a **monorepo**,
+TypeScript everywhere. Backend and frontend live together in this single repository as a
+**pnpm workspaces monorepo** — `apps/` holds what runs, `packages/` holds what is shared —
 with a **BFF (Backend For Frontend)** layer between the frontend and the services behind it.
 
 ```
-M4 (monorepo)
+M4 (pnpm workspaces monorepo)
 ├── Next.js (App Router)
 │   ├── React
 │   ├── Tailwind CSS
@@ -60,16 +61,21 @@ M4 (monorepo)
     └── Playwright
 ```
 
-| Layer | Technology |
-| --- | --- |
-| Language | TypeScript |
-| Frontend | Next.js (App Router) / React / Tailwind CSS |
-| BFF | tRPC |
-| ORM | Prisma |
-| Database | PostgreSQL |
-| LLM | OpenAI / Gemini |
-| Local development | Docker (Docker Compose) |
-| Testing | Vitest (unit and integration) / Playwright (E2E) |
+| Layer | Technology | Version |
+| --- | --- | --- |
+| Language | TypeScript | 5.9 |
+| Runtime | Node.js | 22 LTS |
+| Package manager | pnpm (workspaces) | 9.15 |
+| Frontend | Next.js (App Router) / React / Tailwind CSS | 15.5 / 19.2 / 4.3 |
+| BFF | tRPC | 11.18 |
+| ORM | Prisma | 6.19 |
+| Database | PostgreSQL (with pgvector) | 17 |
+| LLM | OpenAI / Gemini | `openai` 4.104 / `@google/genai` 1.52 |
+| Local development | Docker Compose | — |
+| Testing | Vitest (unit and integration) / Playwright (E2E) | 3.2 / 1.63 |
+| Static analysis | ESLint / Prettier | 9.39 / 3.9 |
+
+Versions are indicative; `package.json` and `pnpm-lock.yaml` are the source of truth.
 
 > Infrastructure (AWS, GCP, and so on) is deferred. Local development with Docker Compose comes first.
 
@@ -119,6 +125,7 @@ pnpm dev                  # http://localhost:3000
 ## Development Rules
 
 - Driven by **GitHub Spec Kit**, following **SDD (Spec Driven Development)** and **AI-DLC**
+- **A spec is the default, not a ritual.** Work carrying real design decisions goes through a spec first; small or self-evident changes may simply be written. Judgement over ceremony
 - **Humans write zero lines of code** — the implementation is entirely AI-authored
 - Work starts from a **GitHub issue**, on a branch cut from `main`, and lands through a **pull request into `main`**
 - Branches are named `<type>/<issue-number>-<short-description>` — for example `feature/12-model-selector` or `chore/3-tech-stack-setup`

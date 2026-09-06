@@ -149,6 +149,13 @@ zero lines of code — the implementation is entirely AI-authored, so the spec, 
 issue and the PR description carry the intent that code review would otherwise
 have to reconstruct.
 
+A spec is the default, not a ritual to perform on every change. Work that carries
+real design decisions — a new capability, a schema change, anything that sets a
+precedent — is specified first. A small or self-evident change may simply be
+written. When in doubt, write the spec; the cost of one is low next to the cost
+of a design nobody agreed to. The workflow rules above are not subject to this
+judgement call: branch and PR discipline applies to every change, spec or not.
+
 ## Language
 
 Code, comments, commit messages, documentation and PR descriptions are written
