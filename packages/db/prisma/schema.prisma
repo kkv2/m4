@@ -5,8 +5,8 @@
 // knowledge derived from them are shared across the whole tenant.
 
 generator client {
-  provider = "prisma-client"
-  output   = "../src/generated/client"
+  provider            = "prisma-client"
+  output              = "../src/generated/client"
   // Emit explicit extensions so the client resolves under plain Node ESM too,
   // not only through a bundler.
   importFileExtension = "ts"
@@ -22,6 +22,25 @@ enum Role {
   OWNER
   ADMIN
   MEMBER
+}
+
+/// The languages M4 speaks. Exactly two, by design.
+enum Language {
+  JA
+  EN
+}
+
+/// Which sign-in screen an attempt came from. Operator and tenant counters
+/// never share a key.
+enum SignInSurface {
+  OPERATOR
+  TENANT
+}
+
+/// What a throttle row counts: one account, or one calling client.
+enum ThrottleScope {
+  ACCOUNT
+  CLIENT
 }
 
 enum MessageRole {
@@ -43,12 +62,14 @@ enum DocumentStatus {
 }
 
 model Tenant {
-  id        String   @id @default(cuid())
-  /// URL-safe tenant identifier, unique across the platform.
-  slug      String   @unique
-  name      String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id              String   @id @default(cuid())
+  /// Display name, as the operator entered it. Not unique: two customers may
+  /// legitimately share a name, and `id` is what tells them apart.
+  name            String
+  /// Pre-selected for every user registered under this tenant.
+  defaultLanguage Language @default(JA)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 
   users         User[]
   conversations Conversation[]
@@ -58,21 +79,104 @@ model Tenant {
 }
 
 model User {
-  id        String   @id @default(cuid())
-  tenantId  String
-  email     String
-  name      String?
-  role      Role     @default(MEMBER)
+  id           String @id @default(cuid())
+  tenantId     String
+  /// Unique across the whole platform, not merely within the tenant: sign-in
+  /// takes an address and a password and nothing else, so the address alone has
+  /// to identify both the account and its tenant. Immutable after registration.
+  email        String @unique
+  name         String
+  passwordHash String
+  role         Role   @default(MEMBER)
+
+  /// Set from the tenant default at registration, then owned by the user.
+  language              Language
+  /// When the user passed the first-login language step. Null means they have
+  /// not — which is not the same as `language` having no value.
+  languageConfirmedAt   DateTime?
+  /// True whenever the current password was generated rather than chosen.
+  mustChangePassword    Boolean   @default(true)
+  /// Set only once both first-login steps are done. Read by the operator console.
+  firstLoginCompletedAt DateTime?
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   tenant        Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   conversations Conversation[]
   documents     Document[]
+  sessions      UserSession[]
 
-  @@unique([tenantId, email])
   @@index([tenantId])
   @@map("users")
+}
+
+/// A member of SaaS operations staff. Belongs to no tenant, which is what lets
+/// the type system keep operators and tenant users apart. Created only by the
+/// bootstrap CLI — there is no screen or endpoint that makes one.
+model Operator {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  sessions OperatorSession[]
+
+  @@map("operators")
+}
+
+/// A signed-in tenant user. Separate from OperatorSession on purpose: two
+/// tables make crossing the operator/user boundary unrepresentable rather than
+/// merely checked.
+model UserSession {
+  id         String   @id @default(cuid())
+  /// SHA-256 of the opaque token the browser holds. The token itself is never
+  /// stored, so a database dump cannot be replayed as a session.
+  tokenHash  String   @unique
+  userId     String
+  createdAt  DateTime @default(now())
+  lastUsedAt DateTime @default(now())
+  expiresAt  DateTime
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+  @@map("user_sessions")
+}
+
+/// A signed-in operator. Same shape as UserSession, against Operator.
+model OperatorSession {
+  id         String   @id @default(cuid())
+  tokenHash  String   @unique
+  operatorId String
+  createdAt  DateTime @default(now())
+  lastUsedAt DateTime @default(now())
+  expiresAt  DateTime
+
+  operator Operator @relation(fields: [operatorId], references: [id], onDelete: Cascade)
+
+  @@index([operatorId])
+  @@index([expiresAt])
+  @@map("operator_sessions")
+}
+
+/// One counter per (surface, scope, key). The ACCOUNT key is the submitted
+/// email address rather than a user id, so the counter behaves identically for
+/// an address that has no account — which is what stops throttling from
+/// leaking whether an address is registered.
+model SignInThrottle {
+  id              String        @id @default(cuid())
+  surface         SignInSurface
+  scope           ThrottleScope
+  key             String
+  failureCount    Int           @default(0)
+  windowStartedAt DateTime      @default(now())
+
+  @@unique([surface, scope, key])
+  @@index([windowStartedAt])
+  @@map("sign_in_throttles")
 }
 
 model Conversation {
