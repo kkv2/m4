@@ -296,7 +296,7 @@ needs the schema, the auth primitives and the procedure builders.
 
 **Independent test**: register a user under a tenant, capture the shown password, and use it in US4.
 
-- [ ] T019 [US3] Implement `apps/web/src/server/api/routers/admin/users.ts` with tests
+- [X] T019 [US3] Implement `apps/web/src/server/api/routers/admin/users.ts` with tests
 
   - **Purpose**: register users, list them, reissue a lost password.
   - **Spec**: US3 · FR-015 to FR-020, FR-024, FR-035, FR-023c
@@ -305,7 +305,7 @@ needs the schema, the auth primitives and the procedure builders.
   - **Not in this task**: editing an email address (FR-018 forbids it), deleting a user (FR-046).
   - **Depends on**: T016, T005, T008.
 
-- [ ] T020 [US3] Build the tenant detail screen at `apps/web/src/app/(operator)/admin/tenants/[tenantId]/page.tsx`
+- [X] T020 [US3] Build the tenant detail screen at `apps/web/src/app/(operator)/admin/tenants/[tenantId]/page.tsx`
 
   - **Purpose**: the screen where users are registered and reviewed.
   - **Spec**: US3, US6 · FR-015, FR-016, FR-017, FR-018, FR-020, FR-024
@@ -313,6 +313,15 @@ needs the schema, the auth primitives and the procedure builders.
   - **Done when**: the registration form pre-selects the tenant's default language; the generated password is displayed once after registration in a form the operator can copy, and is not re-rendered on a later visit; the user list shows each identifier, the email address as non-editable, and first-login status; reissue is available per user; an empty tenant shows an empty state.
   - **Not in this task**: cross-tenant navigation beyond a link back to the list.
   - **Depends on**: T019, T018.
+  - **Notes from implementation**:
+    - The generated password lives in component state and nowhere else. It is
+      never written to the query cache, so no refetch can bring it back — which
+      is what makes "shown once" true rather than merely intended.
+    - The "cannot be changed later" hint sits outside the `<label>`. Inside it,
+      it became part of the field's accessible name.
+    - `admin.users` has no `update` and no `delete`. A test asserts the router's
+      procedure list, so adding either should fail and send whoever added it to
+      the spec (FR-018, FR-046).
 
 ---
 
