@@ -56,6 +56,13 @@ export const ja = {
     changePassword: "パスワードを変更",
     saved: "変更を保存しました。",
   },
+  app: {
+    welcome: "ようこそ",
+    // The application itself arrives with issue #23; until then the shell says
+    // plainly that first login worked and nothing is broken.
+    nothingHereYet: "チャット機能は近日公開です。ログインは完了しています。",
+    settings: "設定",
+  },
   language: {
     ja: "日本語",
     en: "English",
