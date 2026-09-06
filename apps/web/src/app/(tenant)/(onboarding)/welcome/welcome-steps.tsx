@@ -83,7 +83,7 @@ export function WelcomeSteps({
   return (
     <div
       lang={languageTag(language)}
-      className="mx-auto flex min-h-dvh max-w-sm flex-col justify-center gap-8 px-6"
+      className="mx-auto flex w-full max-w-sm flex-col justify-center gap-8 px-6"
     >
       {currentStep === "language" ? (
         <form method="post" onSubmit={onConfirmLanguage} className="flex flex-col gap-4">

@@ -545,7 +545,7 @@ needs the schema, the auth primitives and the procedure builders.
 
 **Independent test**: sign in to each surface and see both without navigating.
 
-- [ ] T029 [US7] Verify and finish the mark and account display on both surfaces
+- [X] T029 [US7] Verify and finish the mark and account display on both surfaces
 
   - **Purpose**: close the gap between "the components exist" and "every screen shows them".
   - **Spec**: US7 · FR-009, FR-041, FR-044, FR-045
@@ -553,6 +553,31 @@ needs the schema, the auth primitives and the procedure builders.
   - **Done when**: both layouts render `<Mark />` and the signed-in principal on every screen beneath them; the mark is legible at icon scale against the dark base tone; a component test asserts the mark's accessible name.
   - **Not in this task**: a favicon, an app icon, or any change to `docs/assets/banner.svg`.
   - **Depends on**: T017, T023.
+  - **Notes from implementation**:
+    - The first-login screen was showing neither. It renders to a signed-in user
+      and has no shell above it — the two layouts covered everything except the
+      one route that sits between them.
+    - The coverage test walks the route tree rather than asserting per
+      component. Every component was fine on its own; what was missing was a
+      screen, which is only visible from the tree.
+    - `<Mark />` measures 28×28 in both shells and stays legible against the
+      dark ground, including at a 400px viewport.
+
+- [X] T029a Give the tenant-side account display a requirement number
+
+  - **Purpose**: "signed-in account information visible in both surfaces"
+    appeared in Scope and in User Story 7, but only the operator half ever had a
+    number (FR-009).
+  - **Spec**: FR-044a (new) · US7
+  - **Touches**: `specs/022-admin-console-onboarding/spec.md`, `apps/web/src/components/account-badge.tsx`, `apps/web/src/server/api/routers/auth.ts`
+  - **Done when**: FR-044a states the tenant-side requirement and says the
+    first-login screens are included; the correction is recorded under
+    Clarifications; the two comments that cited FR-041 for it — which is the
+    unrelated "cannot view another user's account" — cite FR-044a instead.
+  - **Depends on**: nothing.
+  - **Note**: not in the original breakdown. An unnumbered requirement is one
+    nothing can be traced to, which is how the first-login screen went uncovered
+    through four issues.
 
 ---
 

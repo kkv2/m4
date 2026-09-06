@@ -67,6 +67,7 @@ attribution and is a hard prerequisite for the LLM chat work (issue #23).
 ### Session 2026-09-06
 
 - Q: How does a tenant user identify which tenant they belong to at sign-in, given the same email address could exist in more than one tenant? → A: Email addresses are unique across the whole platform; sign-in is email and password alone, with no tenant identifier.
+- Correction (2026-09-07): "Signed-in account information visible in both the operator console and the tenant-facing application" appeared in Scope and in User Story 7, but only the operator half ever had a requirement number (FR-009). The tenant half is now FR-044a, and it says explicitly that the first-login screens are included — they render to a signed-in user, and they were the one place it had been missed. Found while implementing issue #32.
 - Correction (2026-09-07): User Story 6's scenarios said a user reads as having completed first login once they confirm their language. That was left behind when the clarification below added the password replacement step — FR-033 makes first login complete only once both steps are done. The scenarios now say so, and split into the two states the operator can actually observe. Found while writing issue #31's tests.
 - Q: What language do unauthenticated screens use, before any account language is known? → A: The operator sign-in screen stays Japanese-only; the tenant sign-in screen opens in Japanese with a control to switch to English, and the choice is remembered on that device.
 - Q: What happens to a user's other sessions when their password changes, and how long does a session last? → A: Changing or reissuing a password ends every other session for that user immediately, leaving only the session that made the change; sessions expire 30 days after last access, sliding.
@@ -516,10 +517,14 @@ signed-in account are both visible without navigating anywhere.
   the user's account, and MUST be superseded by the account language once the
   user signs in.
 
-#### Product mark
+#### Product mark and signed-in identity
 
 - **FR-044**: Both the operator console and the tenant application MUST display
   the M4 mark, derived from the README hero banner, at icon scale.
+- **FR-044a**: The tenant application MUST display the signed-in user's own
+  identifying information on every screen it renders to a signed-in user,
+  including the first-login screens. This is the tenant-side counterpart of
+  FR-009, which says the same of the operator console.
 - **FR-045**: The mark MUST remain legible against the product's dark base tone.
 
 #### Deletion
