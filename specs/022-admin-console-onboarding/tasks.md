@@ -36,7 +36,7 @@ is Prisma. Imports inside `apps/web` use the `~/` alias for `src/`.
 
 **Purpose**: the two shared prerequisites that touch configuration and assets.
 
-- [ ] T001 Add the `tsx` dev dependency and the `operator:create` script alias in `package.json` and `apps/web/package.json`
+- [X] T001 Add the `tsx` dev dependency and the `operator:create` script alias in `package.json` and `apps/web/package.json`
 
   - **Purpose**: give the repository a way to run a TypeScript script, which the operator bootstrap CLI needs.
   - **Spec**: FR-001 · research.md R6
@@ -45,7 +45,7 @@ is Prisma. Imports inside `apps/web` use the `~/` alias for `src/`.
   - **Not in this task**: the CLI logic itself, any password handling.
   - **Depends on**: nothing.
 
-- [ ] T002 [P] Create the product mark at `apps/web/public/mark.svg`, cropped from `docs/assets/banner.svg`
+- [X] T002 [P] Create the product mark at `apps/web/public/mark.svg`, cropped from `docs/assets/banner.svg`
 
   - **Purpose**: produce the square icon-scale asset both surfaces will display.
   - **Spec**: FR-044, FR-045 · research.md R10
@@ -61,7 +61,7 @@ is Prisma. Imports inside `apps/web` use the `~/` alias for `src/`.
 **⚠️ No user story work can begin until this phase is complete.** Every story
 needs the schema, the auth primitives and the procedure builders.
 
-- [ ] T003 Apply every schema change in `packages/db/prisma/schema.prisma`
+- [X] T003 Apply every schema change in `packages/db/prisma/schema.prisma`
 
   - **Purpose**: make the data model match `data-model.md` in one coherent edit.
   - **Spec**: FR-010 to FR-020, FR-022a-e, FR-023a-c · data-model.md
@@ -70,7 +70,7 @@ needs the schema, the auth primitives and the procedure builders.
   - **Not in this task**: the migration, any TypeScript. `Attachment`, `Document`, `DocumentChunk`, `Conversation`, `Message` and `User.role` stay exactly as they are.
   - **Depends on**: nothing.
 
-- [ ] T004 Generate the repository's first migration under `packages/db/prisma/migrations/` and regenerate the client
+- [X] T004 Generate the repository's first migration under `packages/db/prisma/migrations/` and regenerate the client
 
   - **Purpose**: move the project from `db:push` to a real migration history.
   - **Spec**: research.md R9 · data-model.md "Migration"
@@ -79,7 +79,7 @@ needs the schema, the auth primitives and the procedure builders.
   - **Not in this task**: seed data, any application code.
   - **Depends on**: T003.
 
-- [ ] T005 [P] Implement scrypt hashing in `apps/web/src/server/auth/password.ts` with tests
+- [X] T005 [P] Implement scrypt hashing in `apps/web/src/server/auth/password.ts` with tests
 
   - **Purpose**: the one place that turns a password into a stored value and back into a verdict.
   - **Spec**: FR-002, FR-017, FR-023 · research.md R2
@@ -88,16 +88,16 @@ needs the schema, the auth primitives and the procedure builders.
   - **Not in this task**: the strength policy, anything that reads or writes the database.
   - **Depends on**: nothing.
 
-- [ ] T006 [P] Implement the password policy in `apps/web/src/server/auth/password-policy.ts` with its deny-list and tests
+- [X] T006 [P] Implement the password policy in `apps/web/src/server/auth/password-policy.ts` with its deny-list and tests
 
   - **Purpose**: FR-032a as a pure function returning which rule failed, so FR-032b's message has something to name.
   - **Spec**: FR-032a, FR-032b, FR-032c · research.md R3
-  - **Touches**: `apps/web/src/server/auth/password-policy.ts`, `apps/web/src/server/auth/password-policy.test.ts`, `apps/web/src/server/auth/common-passwords.txt`
-  - **Done when**: the function returns a discriminated result naming the failed rule (too short, too common, matches your address, matches your display name) or success; the deny-list file carries its source and licence in a header comment; tests cover each rule in both directions and assert that a generated password always passes.
+  - **Touches**: `apps/web/src/server/auth/password-policy.ts`, `apps/web/src/server/auth/password-policy.test.ts`, `apps/web/src/server/auth/common-passwords.ts`
+  - **Done when**: the function returns a discriminated result naming the failed rule (too short, too common, matches your address, matches your display name) or success; the deny-list carries its source and licence in a header comment (a TypeScript module rather than a `.txt` read from disk — Next.js bundles server code, so a path derived from `import.meta.url` does not survive the build); tests cover each rule in both directions and assert that a generated password always passes.
   - **Not in this task**: the "must differ from the issued password" rule (that needs a hash comparison and belongs to the onboarding router), any UI copy.
   - **Depends on**: nothing. *(Reads `generatePassword` from T005 only in its test — write the test to import it, and sequence after T005 if that is inconvenient.)*
 
-- [ ] T007 [P] Define session cookie names and attributes in `apps/web/src/server/auth/cookies.ts`
+- [X] T007 [P] Define session cookie names and attributes in `apps/web/src/server/auth/cookies.ts`
 
   - **Purpose**: keep cookie names and flags in one module so no route invents its own.
   - **Spec**: contracts/trpc-api.md "Cookies" · research.md R7
@@ -106,7 +106,7 @@ needs the schema, the auth primitives and the procedure builders.
   - **Not in this task**: creating or resolving sessions, reading the language preference in a page.
   - **Depends on**: nothing.
 
-- [ ] T008 Implement the session layer in `apps/web/src/server/auth/session.ts` with tests
+- [X] T008 Implement the session layer in `apps/web/src/server/auth/session.ts` with tests
 
   - **Purpose**: create, resolve, extend and revoke sessions for both principal types.
   - **Spec**: FR-021, FR-023a, FR-023b, FR-023c · research.md R1
@@ -115,7 +115,7 @@ needs the schema, the auth primitives and the procedure builders.
   - **Not in this task**: tRPC wiring, cookie emission, throttling.
   - **Depends on**: T004, T007.
 
-- [ ] T009 Implement sign-in throttling in `apps/web/src/server/auth/throttle.ts` with tests
+- [X] T009 Implement sign-in throttling in `apps/web/src/server/auth/throttle.ts` with tests
 
   - **Purpose**: FR-022a-e as a module the sign-in procedures call before comparing a password.
   - **Spec**: FR-022a, FR-022b, FR-022c, FR-022d, FR-022e · research.md R5
@@ -124,7 +124,7 @@ needs the schema, the auth primitives and the procedure builders.
   - **Not in this task**: extracting the client address from a request, the sign-in procedures themselves.
   - **Depends on**: T004.
 
-- [ ] T010 Resolve both sessions in `apps/web/src/server/api/context.ts` and pass `resHeaders` from `apps/web/src/app/api/trpc/[trpc]/route.ts`
+- [X] T010 Resolve both sessions in `apps/web/src/server/api/context.ts` and pass `resHeaders` from `apps/web/src/app/api/trpc/[trpc]/route.ts`
 
   - **Purpose**: turn a request's cookies into principals, and give procedures a way to emit `Set-Cookie`.
   - **Spec**: contracts/trpc-api.md "Procedure builders", "Cookies"
@@ -133,7 +133,7 @@ needs the schema, the auth primitives and the procedure builders.
   - **Not in this task**: authorisation decisions — the context reports what a caller *is*, never what it may do.
   - **Depends on**: T008.
 
-- [ ] T011 Add the three procedure builders in `apps/web/src/server/api/trpc.ts`
+- [X] T011 Add the three procedure builders in `apps/web/src/server/api/trpc.ts`
 
   - **Purpose**: encode authorisation in the type system, so a handler cannot confuse the two principals.
   - **Spec**: FR-007, FR-008, FR-034 · contracts/trpc-api.md · research.md R7
@@ -142,7 +142,7 @@ needs the schema, the auth primitives and the procedure builders.
   - **Not in this task**: any router, any feature logic.
   - **Depends on**: T010.
 
-- [ ] T012 [P] Add the message dictionaries and language provider under `apps/web/src/i18n/`
+- [X] T012 [P] Add the message dictionaries and language provider under `apps/web/src/i18n/`
 
   - **Purpose**: one typed lookup for Japanese and English so no screen hard-codes a string.
   - **Spec**: FR-039, FR-043, FR-043c · research.md R4
@@ -151,7 +151,7 @@ needs the schema, the auth primitives and the procedure builders.
   - **Not in this task**: operator console copy (Japanese only, and it may use these dictionaries or literals), translating screens that do not exist yet.
   - **Depends on**: nothing.
 
-- [ ] T013 [P] Add `<Mark />` and `<AccountBadge />` under `apps/web/src/components/`
+- [X] T013 [P] Add `<Mark />` and `<AccountBadge />` under `apps/web/src/components/`
 
   - **Purpose**: the two pieces both surfaces put in their layout.
   - **Spec**: FR-009, FR-041, FR-044, FR-045
@@ -160,6 +160,25 @@ needs the schema, the auth primitives and the procedure builders.
   - **Not in this task**: fetching the account (the badge takes props), wiring either into a layout.
   - **Depends on**: T002.
 
+- [X] T013a Give CI's `verify` job a database, and load the workspace `.env` into Vitest
+
+  - **Purpose**: unblock the integration tests the plan's test strategy is built on.
+  - **Spec**: plan.md "Test strategy" · SC-007
+  - **Touches**: `.github/workflows/ci.yml`, `apps/web/vitest.setup.ts`
+  - **Done when**: the `verify` job runs a PostgreSQL service and applies migrations before `pnpm test`; `vitest.setup.ts` loads the workspace-root `.env` so `DATABASE_URL` reaches `@m4/db`; both CI jobs use `db:deploy` rather than `db:push`, so the migration history is what gets exercised.
+  - **Not in this task**: any cloud infrastructure — this is CI configuration, which the spec's infrastructure exclusion does not cover.
+  - **Depends on**: T004.
+  - **Note**: not in the original breakdown. The plan assumed integration tests could run in CI, but the `verify` job had no database and its comment said unit tests never open a connection. Found while writing T008's tests and corrected here, per the amended rule that an implementation which proves the plan wrong fixes it in its own pull request.
+
+- [X] T013b Add database fixtures at `apps/web/src/server/testing/fixtures.ts`
+
+  - **Purpose**: give database-backed tests tenants, users and operators without each test writing its own setup.
+  - **Spec**: plan.md "Test strategy"
+  - **Touches**: `apps/web/src/server/testing/fixtures.ts`
+  - **Done when**: fixtures create tenants, tenant users (with a known plaintext password) and operators, each with a random suffix so test files can run in parallel against one database; nothing truncates a table or assumes an empty one.
+  - **Not in this task**: fixtures for chats or documents — issue #23's ground.
+  - **Depends on**: T004, T005.
+  - **Note**: not in the original breakdown; extracted once T008 and T009 both needed the same setup.
 ---
 
 ## Phase 3: User Story 1 — Bootstrap the first operator account (P1)
