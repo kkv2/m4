@@ -187,7 +187,7 @@ needs the schema, the auth primitives and the procedure builders.
 
 **Independent test**: run the command against an empty database and sign in later with what it printed.
 
-- [ ] T014 [US1] Implement the operator bootstrap CLI in `apps/web/src/server/auth/cli/create-operator.ts`
+- [X] T014 [US1] Implement the operator bootstrap CLI in `apps/web/src/server/auth/cli/create-operator.ts`
 
   - **Purpose**: FR-001 to FR-005 — the only way an operator comes into existence.
   - **Spec**: US1 · FR-001, FR-002, FR-003, FR-004, FR-005
@@ -195,6 +195,11 @@ needs the schema, the auth primitives and the procedure builders.
   - **Done when**: `pnpm operator:create -- ops@example.com` creates one operator, prints the generated password exactly once, and exits 0; running it again with the same address exits non-zero with a clear message and creates nothing; the email address is validated; the underlying `createOperator()` function is exported and unit-tested separately from the argv parsing.
   - **Not in this task**: any HTTP route (FR-004 forbids one), operator sign-in.
   - **Depends on**: T001, T004, T005.
+  - **Notes from implementation**: the module imports `~/env/server` before
+    anything else, because `@m4/db` builds its client from `DATABASE_URL` at
+    import time and a CLI run by tsx has nobody else to load the workspace
+    `.env`. The runner also strips a literal `--`, which `pnpm operator:create --
+    <email>` forwards through both the root script and the workspace filter.
 
 ---
 
