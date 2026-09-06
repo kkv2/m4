@@ -15,10 +15,17 @@ Owns the Prisma schema, migrations and the shared `PrismaClient`. See the root
 
 ## Changing the schema
 
+Run these **from the workspace root** — that is the only directory where Prisma
+finds the shared `.env`.
+
 ```bash
-pnpm db:migrate --name <short_description>   # creates and applies a migration
-pnpm db:generate                             # regenerate the client
+pnpm db:migrate     # creates and applies a migration, then regenerates the
+                    # client; prompts for the migration name
+pnpm db:generate    # regenerate the client on its own
 ```
+
+`db:generate` is the exception that runs inside this package, because
+generating needs no database connection and therefore no environment.
 
 Never edit an applied migration. Use `pnpm db:push` only for throwaway local
 experiments, never as a substitute for a migration on a change that ships.

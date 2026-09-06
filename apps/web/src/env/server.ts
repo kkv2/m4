@@ -1,4 +1,29 @@
+import fs from "node:fs";
+import path from "node:path";
+
+import { config as loadDotenv } from "dotenv";
 import { z } from "zod";
+
+/**
+ * One .env file lives at the workspace root and is shared by every package.
+ * Next.js only reads the one inside apps/web, so walk up to the root and load
+ * that file as well. Variables already set in the real environment — CI, the
+ * shell, the container — are left alone.
+ */
+function loadWorkspaceRootEnv(): void {
+  let dir = process.cwd();
+  for (let i = 0; i < 5; i += 1) {
+    if (fs.existsSync(path.join(dir, "pnpm-workspace.yaml"))) {
+      loadDotenv({ path: path.join(dir, ".env"), override: false, quiet: true });
+      return;
+    }
+    const parent = path.dirname(dir);
+    if (parent === dir) return;
+    dir = parent;
+  }
+}
+
+loadWorkspaceRootEnv();
 
 /**
  * Server-side environment contract. Parsed once at module load so a

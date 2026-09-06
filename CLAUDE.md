@@ -95,7 +95,8 @@ Run everything from the repository root; pnpm dispatches to the right package.
 | `pnpm db:down` | Stop it |
 | `pnpm db:reset` | Destroy the volume and start clean |
 | `pnpm db:generate` | Regenerate the Prisma client |
-| `pnpm db:migrate` | Create and apply a migration |
+| `pnpm db:migrate` | Create and apply a migration (prompts for its name) |
+| `pnpm db:deploy` | Apply pending migrations without generating one |
 | `pnpm db:studio` | Open Prisma Studio |
 | `pnpm dev` | Run the Next.js dev server |
 | `pnpm build` | Production build |
@@ -107,7 +108,11 @@ Run everything from the repository root; pnpm dispatches to the right package.
 | `pnpm check` | Everything CI runs, in one go |
 
 First-time setup: `cp .env.example .env`, fill in the API keys, then
-`pnpm install && pnpm db:up && pnpm db:generate && pnpm db:push`.
+`pnpm install && pnpm db:up && pnpm db:push`.
+
+There is **one `.env`, at the workspace root**, shared by every package. Prisma
+finds it because its commands run from the root; `apps/web` loads it explicitly
+in `src/env/server.ts`, since Next.js otherwise only looks inside `apps/web`.
 
 ## Tech stack
 
@@ -125,7 +130,8 @@ infrastructure. Cloud infrastructure is deliberately out of scope for now.
 - **Server-only code stays under `src/server/`.** Anything importing
   `~/env/server` or a provider SDK must never reach a client component.
 - **Environment variables go through `src/env/`.** Do not read `process.env`
-  directly in application code.
+  directly in application code, and add every new variable to `.env.example`
+  and to the Zod schema in the same change.
 - **Procedures that touch tenant data use `protectedProcedure`** and scope every
   query by `ctx.tenantId`.
 - **Dark base tone.** The palette lives in `apps/web/src/app/globals.css` as

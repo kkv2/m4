@@ -17,6 +17,8 @@ export const baseConfig = tseslint.config(
       "**/playwright-report/**",
       "**/test-results/**",
       "**/generated/**",
+      // Written by `next build`, and not committed.
+      "**/next-env.d.ts",
     ],
   },
   js.configs.recommended,
