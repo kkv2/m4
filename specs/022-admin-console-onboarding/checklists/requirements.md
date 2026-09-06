@@ -31,5 +31,5 @@
 
 ## Notes
 
-- Items marked incomplete require spec updates before `/speckit-clarify` or `/speckit-plan`
+- Clarification session 2026-09-06 resolved five ambiguities: sign-in identity resolution, password strength rules, sign-in throttling, session lifetime and invalidation, and the language of unauthenticated screens. See the Clarifications section of the spec.
 - The Open Questions section records non-blocking unknowns that have a stated default in Assumptions.

@@ -33,7 +33,10 @@ attribution and is a hard prerequisite for the LLM chat work (issue #23).
     first-login status;
   - reissue a user's password when the issued one has been lost.
 - Sign-in for tenant users with the email address and password the operator
-  issued.
+  issued — those two values alone — protected by throttling of repeated failed
+  attempts.
+- A tenant sign-in screen available in both Japanese and English, since no
+  account language is known before sign-in.
 - A first-login step in which the user chooses a language and replaces the
   password the operator issued.
 - A settings screen for a tenant user's own account: read-only identifier and
@@ -58,6 +61,16 @@ attribution and is a hard prerequisite for the LLM chat work (issue #23).
   model selection, semantic search.
 - Document upload and RAG.
 - Infrastructure provisioning and production operation. Local development only.
+
+## Clarifications
+
+### Session 2026-09-06
+
+- Q: How does a tenant user identify which tenant they belong to at sign-in, given the same email address could exist in more than one tenant? → A: Email addresses are unique across the whole platform; sign-in is email and password alone, with no tenant identifier.
+- Q: What language do unauthenticated screens use, before any account language is known? → A: The operator sign-in screen stays Japanese-only; the tenant sign-in screen opens in Japanese with a control to switch to English, and the choice is remembered on that device.
+- Q: What happens to a user's other sessions when their password changes, and how long does a session last? → A: Changing or reissuing a password ends every other session for that user immediately, leaving only the session that made the change; sessions expire 30 days after last access, sliding.
+- Q: How should the system respond to repeated failed sign-in attempts? → A: Throttle by account and by source together — refuse further attempts for a cooling-off period once a threshold is crossed, releasing automatically; never lock an account permanently.
+- Q: What strength rules must a user-chosen password satisfy? → A: At least 12 characters, no character-class mix required, rejected if it appears in a common-password dictionary or matches the user's own email address or display name.
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -141,15 +154,15 @@ and use it to sign in as that user.
 3. **Given** the user registration form, **When** the operator submits a valid
    email address, display name and language, **Then** the user is created and a
    strong random password is displayed once for the operator to copy.
-4. **Given** an email address already used inside the same tenant, **When** the
-   operator submits it again, **Then** the user is not created and a message
-   explains that the address is already taken in that tenant.
+4. **Given** an email address already registered to any tenant on the platform,
+   **When** the operator submits it again, **Then** the user is not created and a
+   message explains that the address is already in use.
 5. **Given** an existing user, **When** the operator views them, **Then** the
    email address is displayed as a value that cannot be edited.
 6. **Given** a user who has lost the password they were issued, **When** the
    operator reissues it, **Then** a new strong random password is displayed once,
-   the previous password stops working, and the user's first-login status is
-   unchanged.
+   the previous password stops working, any session that user had ends, and their
+   first-login status is unchanged.
 
 ---
 
@@ -171,25 +184,36 @@ does not, and the step does not reappear.
 
 **Acceptance Scenarios**:
 
-1. **Given** a user who has never signed in, **When** they sign in with correct
+1. **Given** a visitor at the tenant sign-in screen, **When** they arrive for the
+   first time, **Then** the screen is in Japanese and offers a switch to English;
+   after switching, a later visit from the same device opens in English.
+2. **Given** a user who has never signed in, **When** they sign in with correct
    credentials, **Then** the language selection step is shown with the
    operator-set language pre-selected.
-2. **Given** the language selection step, **When** the user confirms a language,
+3. **Given** the language selection step, **When** the user confirms a language,
    **Then** the password replacement step is shown next, in the chosen language.
-3. **Given** the password replacement step, **When** the user submits a new
+4. **Given** the password replacement step, **When** the user submits a new
    password that meets the strength rules, **Then** it becomes their password,
    the issued password stops working, and the account is marked as having
    completed first login.
-4. **Given** the password replacement step, **When** the user submits the same
+5. **Given** the password replacement step, **When** the user submits the same
    password they were issued, **Then** the change is rejected with a message
    saying the new password must differ.
-5. **Given** a user who has completed first login, **When** they sign in again,
+6. **Given** the password replacement step, **When** the user submits a password
+   shorter than 12 characters, one that appears in the common-password
+   dictionary, or one matching their own email address or display name, **Then**
+   the change is rejected and the message names the rule that failed.
+7. **Given** a user who has completed first login, **When** they sign in again,
    **Then** neither the language step nor the password replacement step is shown.
-6. **Given** any user, **When** they sign in with a wrong password, **Then**
+8. **Given** any user, **When** they sign in with a wrong password, **Then**
    access is refused with a message that does not reveal whether the email
    address exists.
-7. **Given** a user in tenant A, **When** they are signed in, **Then** no screen
+9. **Given** a user in tenant A, **When** they are signed in, **Then** no screen
    exposes any data belonging to another tenant.
+10. **Given** repeated wrong-password attempts against the same account, **When**
+    the throttling threshold is crossed, **Then** further attempts are refused
+    until the cooling-off period elapses, after which the correct password works
+    again.
 
 ---
 
@@ -213,11 +237,12 @@ across a fresh sign-in.
 2. **Given** the settings screen, **When** the user views it, **Then** their user
    identifier and email address are shown as values that cannot be edited.
 3. **Given** the settings screen, **When** the user submits a new password that
-   meets the strength rules, **Then** the password is changed and the next
-   sign-in requires the new password.
+   meets the strength rules, **Then** the password is changed, the next sign-in
+   requires the new password, and the user's other sessions end while the one
+   they are using continues.
 4. **Given** the settings screen, **When** the user submits a new password that
-   fails the strength rules, **Then** the change is rejected with a message
-   explaining the rule that failed.
+   fails the strength rules of FR-032a, **Then** the change is rejected with a
+   message naming the rule that failed.
 5. **Given** the settings screen, **When** the user changes their display name or
    language, **Then** the change takes effect immediately and persists across
    sign-ins.
@@ -281,10 +306,12 @@ signed-in account are both visible without navigating anywhere.
 - An operator registers a tenant user and closes the page before copying the
   generated password. The password cannot be read again; the operator reissues it
   (FR-024).
-- Two operators register a user with the same email address in the same tenant at
-  the same moment. Exactly one succeeds; the other is told the address is taken.
-- The same email address is registered in two different tenants. Both succeed —
-  addresses are unique within a tenant, not across the platform.
+- Two operators register a user with the same email address at the same moment,
+  in the same tenant or in different ones. Exactly one succeeds; the other is
+  told the address is already in use.
+- An operator tries to register an address that already belongs to a user in a
+  different tenant. It is refused, and the message says the address is in use
+  without disclosing which tenant holds it.
 - A user reaches the application without completing first login (by navigating
   directly). They are returned to the step they have not finished.
 - A user abandons first login between choosing a language and replacing the
@@ -296,12 +323,28 @@ signed-in account are both visible without navigating anywhere.
   first login again; they change it from settings if they wish.
 - A user's session is signed out in another window and they then submit a
   settings change. The change is refused and they are returned to sign in.
-- A user changes their own password while signed in elsewhere; see FR-021 for
-  what happens to the other session.
+- A user mistypes their own password five times and is throttled. They wait out
+  the cooling-off period and sign in successfully, without contacting the
+  operator.
+- An attacker tries many addresses from one client, failing once each. The
+  per-client counter still trips, even though no single account's counter does.
+- A user is throttled on an address that has no account. The refusal is
+  indistinguishable from the one a registered address would produce.
+- A user changes their own password while signed in elsewhere. The other session
+  ends at once (FR-023c); that window returns to sign-in on its next request.
+- An operator reissues a password for a user who is signed in at that moment. The
+  user's session ends immediately, which is the point: reissue is how a
+  compromised account is shut out.
+- A user submits a 12-character password that is entirely one repeated character
+  but is not in the dictionary. It is accepted: the rules are exactly those in
+  FR-032a, and no further judgement is applied.
 - The keyboard shortcut for settings collides with a browser or OS shortcut on
   some platforms. The settings control in the UI always remains available as the
   alternative.
 - A tenant has no users yet. The user list shows an empty state, not an error.
+- A user whose account language is English signs in on a device where the sign-in
+  screen was left in Japanese. The application is English from the first screen
+  after sign-in; the account language wins (FR-043d).
 
 ## Requirements *(mandatory)*
 
@@ -324,7 +367,8 @@ signed-in account are both visible without navigating anywhere.
 #### Operator console
 
 - **FR-006**: The operator console MUST be rendered entirely in Japanese,
-  independent of any browser or account language preference.
+  independent of any browser or account language preference. This includes its
+  sign-in screen, which offers no language choice.
 - **FR-007**: The operator console MUST require a signed-in operator; an
   unauthenticated request to any console screen MUST be redirected to operator
   sign-in and MUST NOT disclose tenant data.
@@ -356,23 +400,52 @@ signed-in account are both visible without navigating anywhere.
   random value, subject to FR-003.
 - **FR-018**: A user's email address MUST be immutable after registration, by
   both the operator and the user.
-- **FR-019**: Email addresses MUST be unique within a tenant and MAY repeat
-  across tenants.
+- **FR-019**: A tenant user's email address MUST be unique across the whole
+  platform, not merely within their tenant. The operator MUST be told at
+  registration time when an address is already in use by another tenant, and the
+  user MUST NOT be created.
+- **FR-019a**: Operator accounts and tenant-user accounts occupy separate address
+  spaces: the same address MAY exist as both, and each is reached through its own
+  sign-in surface under FR-008.
 - **FR-020**: For each user, the console MUST show the user identifier and
   whether that user has completed first login.
 
 #### Authentication
 
 - **FR-021**: Tenant users MUST be able to sign in with the email address and
-  password issued by the operator, and MUST be able to sign out.
+  password issued by the operator — those two values alone, with no tenant
+  identifier to supply or select — and MUST be able to sign out. The tenant is
+  resolved from the account the address identifies.
 - **FR-022**: Failed sign-in MUST NOT reveal whether the email address is
   registered.
+- **FR-022a**: The system MUST limit repeated failed sign-in attempts, counted
+  both per account and per originating client, on both sign-in surfaces.
+- **FR-022b**: Once the threshold is crossed, further attempts against that
+  account or from that client MUST be refused for a cooling-off period, and MUST
+  be accepted again once it elapses, with no operator action required.
+- **FR-022c**: The threshold is 5 consecutive failures within 15 minutes and the
+  cooling-off period is 15 minutes. A successful sign-in MUST reset the account's
+  counter.
+- **FR-022d**: The system MUST NOT lock an account permanently or in a way that
+  only an operator can release, so that knowing someone's address is not enough
+  to deny them access.
+- **FR-022e**: A refusal caused by throttling MUST NOT reveal whether the email
+  address is registered, keeping FR-022 intact.
 - **FR-023**: Passwords MUST be stored such that they cannot be recovered from
   storage, and MUST NEVER be displayed after the single display at FR-003.
+- **FR-023a**: A session MUST expire 30 days after its last use, each use
+  extending it. An expired session MUST return the user to sign-in without
+  exposing any data.
+- **FR-023b**: Signing out MUST end the session that signed out, and only that
+  one.
+- **FR-023c**: When a user's password changes — whether they changed it
+  themselves, replaced it at first login, or an operator reissued it — every
+  other session belonging to that user MUST end immediately. The session that
+  performed the change, if any, MUST continue.
 - **FR-024**: Operators MUST be able to reissue a tenant user's password from the
   console. Reissue MUST generate a new strong random value, display it once under
-  FR-003, invalidate the previous password, and leave the user's first-login
-  status unchanged.
+  FR-003, invalidate the previous password, end that user's sessions under
+  FR-023c, and leave the user's first-login status unchanged.
 - **FR-025**: The system MUST NOT send email, and MUST NOT require email-address
   verification before an account can be used.
 - **FR-026**: The system MUST NOT offer multi-factor authentication.
@@ -389,8 +462,16 @@ signed-in account are both visible without navigating anywhere.
   been completed.
 - **FR-031**: After the language step and before any application screen, first
   login MUST require the user to replace the password they were issued.
-- **FR-032**: The replacement password MUST satisfy the published strength rules
+- **FR-032**: The replacement password MUST satisfy the strength rules of FR-032a
   and MUST differ from the password that was issued.
+- **FR-032a**: A user-chosen password MUST be at least 12 characters long. The
+  system MUST NOT require a mix of character classes. It MUST reject a password
+  that appears in a dictionary of commonly used passwords, and MUST reject one
+  that matches the user's own email address or display name.
+- **FR-032b**: When a password is rejected, the message MUST name the rule that
+  failed, so the user can correct it without guessing.
+- **FR-032c**: Generated passwords (FR-002, FR-017, FR-024) MUST always satisfy
+  FR-032a.
 - **FR-033**: First login MUST be considered complete only once both the language
   and the replacement password have been recorded; a user who abandons it partway
   MUST resume at the unfinished step on the next sign-in.
@@ -405,8 +486,8 @@ signed-in account are both visible without navigating anywhere.
   a visible control in the UI and from a keyboard shortcut.
 - **FR-037**: The settings screen MUST display the user's own user identifier and
   email address as values that cannot be edited.
-- **FR-038**: A user MUST be able to change their own password, subject to
-  published strength rules, and MUST NOT be able to change anyone else's.
+- **FR-038**: A user MUST be able to change their own password, subject to the
+  strength rules of FR-032a, and MUST NOT be able to change anyone else's.
 - **FR-039**: A user MUST be able to change their own display name.
 - **FR-040**: A user MUST be able to change their own language, taking effect
   immediately.
@@ -419,6 +500,17 @@ signed-in account are both visible without navigating anywhere.
   user's tenant, so that no screen or response can carry another tenant's data.
 - **FR-043**: The tenant-facing application MUST be rendered in the signed-in
   user's language.
+- **FR-043a**: The tenant sign-in screen, which is reached before any account
+  language is known, MUST open in Japanese and MUST offer a control to switch to
+  English.
+- **FR-043b**: The language chosen on the tenant sign-in screen MUST persist on
+  that device across visits, so a returning English user does not switch every
+  time.
+- **FR-043c**: All text on the tenant sign-in screen, including validation and
+  throttling messages, MUST be available in both languages.
+- **FR-043d**: The device-level choice at FR-043b MUST NOT alter the language on
+  the user's account, and MUST be superseded by the account language once the
+  user signs in.
 
 #### Product mark
 
@@ -439,8 +531,9 @@ signed-in account are both visible without navigating anywhere.
   (Japanese or English), and a platform-unique identifier operators can read.
   Owns its users and every row of conversation or knowledge beneath them.
 - **Tenant User**: A person inside a tenant. Holds an immutable email address
-  unique within the tenant, a display name, a language, a password, a readable
-  identifier, and a flag recording whether first login has been completed.
+  unique across the platform, a display name, a language, a password, a readable
+  identifier, and a flag recording whether first login has been completed. The
+  address alone determines both the account and its tenant.
 - **Session**: The signed-in state binding a request to either an operator or a
   tenant user, and — for tenant users — to exactly one tenant.
 
@@ -451,23 +544,29 @@ signed-in account are both visible without navigating anywhere.
 - **SC-001**: Starting from an empty database, an operator can bootstrap their
   own account, register a tenant and register that tenant's first user in under
   5 minutes, without editing any file or writing any query by hand.
-- **SC-002**: A tenant user given only an email address and a password can sign
-  in and reach the application — language chosen and password replaced — in under
-  90 seconds and without further help.
+- **SC-002**: A tenant user given only an email address and a password — nothing
+  else, no tenant name or URL — can sign in and reach the application, language
+  chosen and password replaced, in under 90 seconds and without further help.
 - **SC-003**: 100% of operator console text is Japanese, regardless of the
   browser's language settings.
 - **SC-004**: 100% of tenant-facing text is presented in the signed-in user's
-  chosen language.
+  chosen language, and 100% of tenant sign-in text is available in both
+  languages.
 - **SC-005**: A generated password is visible exactly once and is unreadable
   everywhere else in the product and in stored data.
-- **SC-009**: After a user completes first login, the password the operator
-  issued no longer grants access.
 - **SC-006**: The operator's view of a tenant reflects a user's first login
   within one page refresh of that login completing.
 - **SC-007**: No request made by a user of one tenant returns data belonging to
   another tenant, verified by an automated test that attempts it.
 - **SC-008**: Both surfaces show the signed-in account and the product mark
   without the viewer having to navigate anywhere.
+- **SC-009**: After a user completes first login, the password the operator
+  issued no longer grants access.
+- **SC-010**: Guessing at a password by repeated attempts is stopped after a
+  handful of tries, and the legitimate owner regains access by waiting, never by
+  contacting the operator.
+- **SC-011**: After an operator reissues a user's password, no session opened
+  with the old password can perform another action.
 
 ## Assumptions
 
@@ -476,8 +575,11 @@ signed-in account are both visible without navigating anywhere.
 - **Tenant identifier**: The tenant identifier and user identifier are
   system-generated opaque values, displayed for support and diagnosis. The
   operator does not choose them, and no human-friendly slug is collected at
-  registration. The existing schema's tenant `slug` field may be derived or
-  retired during planning.
+  registration. Because sign-in carries no tenant identifier (FR-021), nothing
+  routes by tenant, so the existing schema's tenant `slug` field is retired
+  rather than derived.
+- **Sign-in surfaces**: The operator console and the tenant application have
+  separate sign-in screens, which is what keeps FR-019a unambiguous.
 - **Tenant user roles**: All users inside a tenant are equal in this feature. The
   `Role` values already present in the schema are not exercised here, and no
   screen depends on them.
@@ -487,14 +589,24 @@ signed-in account are both visible without navigating anywhere.
 - **"Chat count"** means the number of conversations started within the tenant,
   as defined by issue #23. Until that feature exists, the count is structurally
   zero.
-- **Password strength rules** are the product's own, applied to every
-  user-chosen password — at first login and in settings alike; generated
-  passwords always satisfy them.
-- **Session handling** uses conventional web session semantics: signing out ends
-  the session, and sessions expire after a period of inactivity. No "remember me"
-  is offered.
-- **Language set** is exactly Japanese and English. No third language, and no
-  per-screen override.
+- **Password strength rules** (FR-032a) follow current NIST SP 800-63B guidance:
+  length and a deny-list carry the weight, and composition rules are deliberately
+  absent because they push people towards predictable patterns. They apply to
+  every user-chosen password — at first login and in settings alike.
+- **The common-password dictionary** is a static list shipped with the product.
+  There is no call to an external breach-checking service, consistent with this
+  feature making no outbound requests.
+- **Throttling thresholds** (FR-022c) are a starting point chosen to stop
+  guessing without frustrating someone who has genuinely forgotten which password
+  they set. They are values to tune, not a product promise.
+- **Session handling** is defined by FR-023a to FR-023c. The 30-day sliding
+  expiry is chosen so that everyday B2B use does not mean signing in every week;
+  it is a value to tune. No "remember me" toggle is offered, because the sliding
+  session already behaves like one.
+- **Language set** is exactly Japanese and English. No third language. The only
+  per-screen override is the device-level choice on the tenant sign-in screen
+  (FR-043a to FR-043d), which exists solely because no account language is known
+  there yet.
 - **Single deployment, local only.** There is no production environment, no
   custom domain per tenant, and no infrastructure work in this feature.
 - **The existing data model is a starting point, not a constraint.** The current
@@ -516,11 +628,7 @@ presentation detail for planning to settle.
 
 - Should the operator console show a global list of all tenants and a search over
   them, or is a simple list sufficient at this scale?
-- Should reissuing a password end that user's active sessions immediately, or
-  only prevent future sign-ins with the old value?
 - Is there any audit trail of operator actions (who registered which tenant and
   when), or is `createdAt` enough for now?
-- When a user changes their password, should other active sessions for that user
-  be ended?
 - Should the keyboard shortcut that opens settings be configurable, and what is
   the non-macOS equivalent?
