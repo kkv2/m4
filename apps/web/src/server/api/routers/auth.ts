@@ -89,7 +89,7 @@ export const authRouter = createTRPCRouter({
   }),
 
   /**
-   * The signed-in account, for the application shell (FR-041). Available before
+   * The signed-in account, for the application shell (FR-044a). Available before
    * first login is complete, because the shell around the first-login steps
    * shows it too. Never returns a password or a hash.
    */

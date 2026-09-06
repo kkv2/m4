@@ -1,8 +1,10 @@
 /**
- * Who the viewer is signed in as (FR-009 for operators, FR-041 for tenant
- * users). Takes props rather than fetching: both layouts already have the
- * account in hand, and a component that fetches would make every screen wait
- * on it.
+ * Who the viewer is signed in as: FR-009 for operators, FR-044a for tenant
+ * users.
+ *
+ * Takes props rather than fetching. Every screen that renders it already has
+ * the account in hand, and a component that fetched would make each of them
+ * wait on a request they have already made.
  */
 export function AccountBadge({
   displayName,
