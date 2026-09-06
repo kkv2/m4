@@ -61,21 +61,22 @@ M4 (pnpm workspaces monorepo)
     └── Playwright
 ```
 
-| Layer | Technology | Version |
-| --- | --- | --- |
-| Language | TypeScript | 5.9 |
-| Runtime | Node.js | 22 LTS |
-| Package manager | pnpm (workspaces) | 9.15 |
-| Frontend | Next.js (App Router) / React / Tailwind CSS | 15.5 / 19.2 / 4.3 |
-| BFF | tRPC | 11.18 |
-| ORM | Prisma | 6.19 |
-| Database | PostgreSQL (with pgvector) | 17 |
-| LLM | OpenAI / Gemini | `openai` 4.104 / `@google/genai` 1.52 |
-| Local development | Docker Compose | — |
-| Testing | Vitest (unit and integration) / Playwright (E2E) | 3.2 / 1.63 |
-| Static analysis | ESLint / Prettier | 9.39 / 3.9 |
+| Layer | Technology |
+| --- | --- |
+| Language | TypeScript |
+| Runtime | Node.js |
+| Package manager | pnpm (workspaces) |
+| Frontend | Next.js (App Router) / React / Tailwind CSS |
+| BFF | tRPC |
+| ORM | Prisma |
+| Database | PostgreSQL (with pgvector) |
+| LLM | OpenAI / Gemini |
+| Local development | Docker Compose |
+| Testing | Vitest (unit and integration) / Playwright (E2E) |
+| Static analysis | ESLint / Prettier |
 
-Versions are indicative; `package.json` and `pnpm-lock.yaml` are the source of truth.
+Versions are deliberately left out: `package.json` and `pnpm-lock.yaml` are the
+source of truth, and Dependabot moves them every week.
 
 > Infrastructure (AWS, GCP, and so on) is deferred. Local development with Docker Compose comes first.
 
@@ -93,7 +94,7 @@ m4/
 
 ## Getting Started
 
-Requires Node.js 20.11+ (see `.nvmrc`), [pnpm](https://pnpm.io) and Docker.
+Requires Node.js 22.11+ (see `.nvmrc`), [pnpm](https://pnpm.io) and Docker.
 
 ```bash
 cp .env.example .env      # then fill in OPENAI_API_KEY and GEMINI_API_KEY
