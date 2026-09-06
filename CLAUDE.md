@@ -195,7 +195,16 @@ Two conventions on top of the defaults:
   installed: it would branch as `NNN-short-name` and collide with the naming
   rule above. Branch and open the PR by hand, as always.
 
-The spec belongs to the change: it lands in the same PR as the code it describes.
+The spec belongs to the change and lands in the same PR as the code it
+describes — with one exception. **When the implementation is split across several
+PRs, the spec lands first, on its own**, so that every later branch is cut from a
+`main` that already carries the agreed specification. Without that, only one of
+those branches would have the spec, and the rest would either chain off it or
+work without it.
+
+That exception has a cost worth naming: a spec sitting in `main` starts to look
+settled. It is not. When implementation shows the spec was wrong, the correction
+goes into that implementation's own PR — never deferred to a tidy-up later.
 
 ## Language
 
