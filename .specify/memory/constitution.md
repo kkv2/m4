@@ -12,6 +12,19 @@ Sync Impact Report
 - Removed sections: none
 - Sources: CLAUDE.md, apps/web/AGENTS.md, README.md
 - Follow-up TODOs: none
+
+Amendment 1.0.0 → 1.1.0 (2026-09-06)
+- Version change: 1.0.0 → 1.1.0 (MINOR — existing guidance materially expanded)
+- Amended section: Development Workflow, closing paragraph
+- What changed: the rule that a specification lands in the same pull request as
+  its code now states what happens when the implementation is split across
+  several pull requests — the specification lands first and alone, and stays
+  correctable from the implementation pull requests that follow.
+- Why: issue #22's implementation is split across nine PBIs. Keeping the
+  specification on one implementation branch would leave the other eight without
+  it, so the rule as written could not be followed. It is amended rather than
+  waived, so that the repository's stated rules and its practice do not diverge.
+- Synced: CLAUDE.md "The Spec Kit flow" carries the same rule from its own angle.
 -->
 
 # M4 Constitution
@@ -121,7 +134,11 @@ discipline applies to every change, spec or not.
    in the body. Merge only once CI is green.
 
 The specification is part of the change and lands in the same pull request as
-the code it describes.
+the code it describes. When the implementation is split across several pull
+requests, the specification lands first and alone, so that every later branch is
+cut from a `main` that already carries it. A specification in `main` is still
+provisional: an implementation that proves it wrong corrects it in that
+implementation's own pull request, rather than deferring the correction.
 
 ## Governance
 
@@ -143,4 +160,4 @@ I and II are verified explicitly, because their violations are invisible in a
 passing test suite. Complexity that a principle does not obviously permit is
 justified in the pull request body or removed.
 
-**Version**: 1.0.0 | **Ratified**: 2026-09-06 | **Last Amended**: 2026-09-06
+**Version**: 1.1.0 | **Ratified**: 2026-09-06 | **Last Amended**: 2026-09-06
