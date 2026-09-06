@@ -1,6 +1,7 @@
 import { createCallerFactory, createTRPCRouter } from "./trpc";
 import { adminTenantsRouter } from "./routers/admin/tenants";
 import { adminUsersRouter } from "./routers/admin/users";
+import { accountRouter } from "./routers/account";
 import { authRouter } from "./routers/auth";
 import { healthRouter } from "./routers/health";
 import { onboardingRouter } from "./routers/onboarding";
@@ -10,6 +11,7 @@ export const appRouter = createTRPCRouter({
   health: healthRouter,
   auth: authRouter,
   onboarding: onboardingRouter,
+  account: accountRouter,
   operatorAuth: operatorAuthRouter,
   admin: createTRPCRouter({
     tenants: adminTenantsRouter,

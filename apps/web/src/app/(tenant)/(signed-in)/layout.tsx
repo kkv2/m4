@@ -7,6 +7,7 @@ import { getMessages, languageTag } from "~/i18n";
 import { LanguageProvider } from "~/i18n/language-provider";
 import { currentUser } from "~/server/auth/current";
 
+import { SettingsLink } from "./settings-link";
 import { SignOutButton } from "./sign-out-button";
 
 /**
@@ -45,6 +46,7 @@ export default async function TenantLayout({ children }: { children: ReactNode }
           </div>
           <div className="flex items-center gap-4">
             <AccountBadge displayName={user.name} email={user.email} />
+            <SettingsLink />
             <SignOutButton />
           </div>
         </header>

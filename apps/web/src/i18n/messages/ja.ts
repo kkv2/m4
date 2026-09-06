@@ -43,6 +43,7 @@ export const ja = {
     matchesDisplayName: "表示名と同じパスワードは使用できません。",
     sameAsIssued: "配布されたパスワードとは異なるものにしてください。",
     currentIncorrect: "現在のパスワードが正しくありません。",
+    sameAsCurrent: "現在のパスワードとは異なるものにしてください。",
   },
   settings: {
     title: "設定",
@@ -55,6 +56,8 @@ export const ja = {
     newPasswordLabel: "新しいパスワード",
     changePassword: "パスワードを変更",
     saved: "変更を保存しました。",
+    shortcutHint: "⌘ + , でも開けます",
+    close: "閉じる",
   },
   app: {
     welcome: "ようこそ",

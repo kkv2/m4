@@ -39,6 +39,7 @@ export const en: Messages = {
     matchesDisplayName: "Your password cannot be your display name.",
     sameAsIssued: "Choose a password different from the one you were given.",
     currentIncorrect: "That is not your current password.",
+    sameAsCurrent: "Choose a password different from your current one.",
   },
   settings: {
     title: "Settings",
@@ -51,6 +52,8 @@ export const en: Messages = {
     newPasswordLabel: "New password",
     changePassword: "Change password",
     saved: "Your changes have been saved.",
+    shortcutHint: "You can also press ⌘ + ,",
+    close: "Close",
   },
   app: {
     welcome: "Welcome",
