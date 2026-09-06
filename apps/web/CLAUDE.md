@@ -28,3 +28,18 @@ services behind it. See the root `CLAUDE.md` for workflow rules.
 
 `pnpm test` runs Vitest in jsdom against `src/**/*.{test,spec}.{ts,tsx}`.
 `pnpm test:e2e` runs Playwright, which starts its own dev server.
+
+## Next.js agent rules
+
+`next dev` writes a managed block of Next.js-version-specific guidance into an
+agent instructions file whenever it detects an AI coding agent. It prefers
+`AGENTS.md` when that file exists, so the block lives there and this file stays
+hand-authored — a vendor-managed section here would be rewritten on every
+Next.js upgrade, and it would turn `pnpm dev` into a source of permanent
+uncommitted diffs.
+
+`AGENTS.md` is imported below rather than duplicated, so the guidance still
+reaches the agent. Treat that file as generated: let `next dev` update it and
+commit the result alongside the Next.js version bump that caused it.
+
+@AGENTS.md
