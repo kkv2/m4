@@ -67,6 +67,7 @@ attribution and is a hard prerequisite for the LLM chat work (issue #23).
 ### Session 2026-09-06
 
 - Q: How does a tenant user identify which tenant they belong to at sign-in, given the same email address could exist in more than one tenant? → A: Email addresses are unique across the whole platform; sign-in is email and password alone, with no tenant identifier.
+- Correction (2026-09-07): the Assumptions said the schema's `Role` enum was "not exercised here", which stopped being true when issue #51 removed it. Nothing had ever read it and both specifications rule out per-user roles, so it was carried as an invitation to use something the product had already decided against.
 - Correction (2026-09-07): "Signed-in account information visible in both the operator console and the tenant-facing application" appeared in Scope and in User Story 7, but only the operator half ever had a requirement number (FR-009). The tenant half is now FR-044a, and it says explicitly that the first-login screens are included — they render to a signed-in user, and they were the one place it had been missed. Found while implementing issue #32.
 - Correction (2026-09-07): User Story 6's scenarios said a user reads as having completed first login once they confirm their language. That was left behind when the clarification below added the password replacement step — FR-033 makes first login complete only once both steps are done. The scenarios now say so, and split into the two states the operator can actually observe. Found while writing issue #31's tests.
 - Q: What language do unauthenticated screens use, before any account language is known? → A: The operator sign-in screen stays Japanese-only; the tenant sign-in screen opens in Japanese with a control to switch to English, and the choice is remembered on that device.
@@ -590,8 +591,9 @@ signed-in account are both visible without navigating anywhere.
 - **Sign-in surfaces**: The operator console and the tenant application have
   separate sign-in screens, which is what keeps FR-019a unambiguous.
 - **Tenant user roles**: All users inside a tenant are equal in this feature. The
-  `Role` values already present in the schema are not exercised here, and no
-  screen depends on them.
+  `Role` enum that was in the schema when this feature began was not exercised
+  by it, and has since been removed (issue #51) — nothing read it, and both this
+  specification and issue #23's say a tenant has no roles.
 - **Credential handover** happens out of band — the operator tells the person
   their password by whatever channel they already use. The product does not
   participate.

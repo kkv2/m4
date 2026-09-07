@@ -101,9 +101,25 @@ cp .env.example .env      # then fill in OPENAI_API_KEY and GEMINI_API_KEY
 pnpm install
 pnpm db:up                # start PostgreSQL in Docker
 pnpm db:generate          # generate the Prisma client
-pnpm db:push              # apply the schema
+pnpm db:deploy            # apply the migrations
 pnpm dev                  # http://localhost:3000
 ```
+
+Nobody can sign in yet: there is no self-service sign-up, by design. Create the
+first SaaS operator account from the command line, which is the only way one
+comes into existence.
+
+```bash
+pnpm operator:create -- you@example.com
+```
+
+It prints a generated password **once**. Sign in with it at
+`http://localhost:3000/admin`, register a tenant and a user there, and hand that
+user their credentials — `http://localhost:3000` is theirs, not yours.
+
+> Use `pnpm db:deploy`, not `pnpm db:push`. `db:push` applies the schema without
+> recording it as a migration, which leaves the database in a state `db:deploy`
+> refuses (`P3005`) and `db:migrate` wants to reset.
 
 | Command | What it does |
 | --- | --- |
@@ -115,7 +131,8 @@ pnpm dev                  # http://localhost:3000
 | `pnpm test:e2e` | Playwright (E2E) |
 | `pnpm check` | Everything CI runs, in one go |
 | `pnpm db:up` / `pnpm db:down` / `pnpm db:reset` | Local PostgreSQL container |
-| `pnpm db:migrate` / `pnpm db:studio` | Prisma migrations / Studio |
+| `pnpm db:migrate` / `pnpm db:deploy` / `pnpm db:studio` | Create a migration / apply pending ones / Prisma Studio |
+| `pnpm operator:create -- <email>` | Create a SaaS operator account (the only way there is one) |
 
 ## Design
 

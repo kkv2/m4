@@ -70,11 +70,13 @@ pnpm check   # format:check + lint + typecheck + test
 m4/
 ├── apps/
 │   └── web/              Next.js (App Router) — UI and the tRPC BFF
-│       ├── src/app/      Routes, layouts, and the tRPC HTTP handler
-│       ├── src/server/   BFF: tRPC routers, context, LLM clients
-│       ├── src/lib/      Client-side helpers (tRPC React provider)
-│       ├── src/env/      Zod-validated environment contracts
-│       └── e2e/          Playwright specs
+│       ├── src/app/         Routes, layouts, and the tRPC HTTP handler
+│       ├── src/server/      BFF: tRPC routers, context, auth, LLM clients
+│       ├── src/components/  Components shared across both surfaces
+│       ├── src/i18n/        Japanese and English message dictionaries
+│       ├── src/lib/         Code shared with the browser
+│       ├── src/env/         Zod-validated environment contracts
+│       └── e2e/             Playwright specs
 ├── packages/
 │   ├── db/               Prisma schema, migrations, shared PrismaClient
 │   └── config/           Shared ESLint flat config and tsconfig base
@@ -101,6 +103,7 @@ Run everything from the repository root; pnpm dispatches to the right package.
 | `pnpm db:migrate` | Create and apply a migration (prompts for its name) |
 | `pnpm db:deploy` | Apply pending migrations without generating one |
 | `pnpm db:studio` | Open Prisma Studio |
+| `pnpm operator:create -- <email>` | Create a SaaS operator account |
 | `pnpm dev` | Run the Next.js dev server |
 | `pnpm build` | Production build |
 | `pnpm lint` / `pnpm lint:fix` | ESLint |
@@ -111,7 +114,21 @@ Run everything from the repository root; pnpm dispatches to the right package.
 | `pnpm check` | Everything CI runs, in one go |
 
 First-time setup: `cp .env.example .env`, fill in the API keys, then
-`pnpm install && pnpm db:up && pnpm db:push`.
+`pnpm install && pnpm db:up && pnpm db:deploy`.
+
+Use `db:deploy`, not `db:push`. `db:push` applies the schema without recording a
+migration, which leaves the database in a state `db:deploy` then refuses
+(`P3005`) and `db:migrate` wants to reset.
+
+Nothing can be signed into until an operator exists, and the only way one comes
+into existence is the command line:
+
+```bash
+pnpm operator:create -- you@example.com
+```
+
+It prints a generated password once. From `/admin`, that operator registers a
+tenant and its users; `/` is the tenant application, and belongs to them.
 
 There is **one `.env`, at the workspace root**, shared by every package.
 `prisma.config.ts` loads it by absolute path, so the `db:*` scripts work from
