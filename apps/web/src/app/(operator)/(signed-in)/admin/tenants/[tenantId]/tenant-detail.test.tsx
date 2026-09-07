@@ -18,6 +18,7 @@ vi.mock("next/link", () => ({
 }));
 
 vi.mock("~/lib/trpc-client", () => ({
+  FRESH: { staleTime: 0, refetchOnMount: "always" },
   api: {
     useUtils: () => ({
       admin: {

@@ -5,7 +5,7 @@ import { useState, type FormEvent } from "react";
 
 import type { Language } from "~/i18n";
 import { admin } from "~/i18n/messages/admin";
-import { api } from "~/lib/trpc-client";
+import { FRESH, api } from "~/lib/trpc-client";
 
 /**
  * Tenant registration and the tenant list (FR-010 to FR-013).
@@ -17,7 +17,7 @@ import { api } from "~/lib/trpc-client";
  */
 export function TenantConsole() {
   const utils = api.useUtils();
-  const tenants = api.admin.tenants.list.useQuery();
+  const tenants = api.admin.tenants.list.useQuery(undefined, FRESH);
 
   const [name, setName] = useState("");
   const [defaultLanguage, setDefaultLanguage] = useState<Language>("JA");

@@ -609,7 +609,7 @@ needs the schema, the auth primitives and the procedure builders.
     database-reading layout on the path for `/`, at which point the dev server
     could not start at all.
 
-- [ ] T031 [P] Add `apps/web/e2e/onboarding.spec.ts`
+- [X] T031 [P] Add `apps/web/e2e/onboarding.spec.ts`
 
   - **Purpose**: prove SC-001, SC-002 and SC-006 end to end.
   - **Spec**: US1, US3, US4, US6 · quickstart.md sections 1, 4, 5, 6
@@ -618,7 +618,7 @@ needs the schema, the auth primitives and the procedure builders.
   - **Not in this task**: throttling timing (too slow for E2E — it is covered by T009's unit tests).
   - **Depends on**: T025, T028.
 
-- [ ] T032 [P] Add `apps/web/e2e/operator-console.spec.ts`
+- [X] T032 [P] Add `apps/web/e2e/operator-console.spec.ts`
 
   - **Purpose**: prove the console's registration paths including the refusals.
   - **Spec**: US2, US3 · quickstart.md sections 2, 3, 4
@@ -627,7 +627,7 @@ needs the schema, the auth primitives and the procedure builders.
   - **Not in this task**: first login (that is T031).
   - **Depends on**: T020.
 
-- [ ] T033 Add the tenant-isolation and credential-exposure regression tests
+- [X] T033 Add the tenant-isolation and credential-exposure regression tests
 
   - **Purpose**: SC-007 and FR-003 are the two properties worth asserting rather than trusting.
   - **Spec**: SC-005, SC-007, FR-003, FR-038, FR-042
@@ -636,7 +636,7 @@ needs the schema, the auth primitives and the procedure builders.
   - **Not in this task**: driving these through the UI — the point is to bypass it.
   - **Depends on**: T026, T021.
 
-- [ ] T034 Run the full gate and the quickstart
+- [X] T034 Run the full gate and the quickstart
 
   - **Purpose**: the definition of done for the feature.
   - **Spec**: quickstart.md
@@ -644,6 +644,34 @@ needs the schema, the auth primitives and the procedure builders.
   - **Done when**: `pnpm check` passes; `pnpm test:e2e` passes against a migrated database; every section of `quickstart.md` behaves as written.
   - **Not in this task**: opening the pull request.
   - **Depends on**: everything above.
+  - **Notes from implementation**:
+    - Every section of the quickstart was walked against a freshly reset
+      database. Section 6 did not behave as written — see T034a.
+    - The E2E specs bootstrap their operator through the CLI rather than seeding
+      one, so US1 is exercised for real: if the command stops printing a usable
+      password, these specs stop being able to sign in.
+    - Each E2E test runs from its own `x-forwarded-for`, because the per-client
+      throttle counts across the whole suite otherwise and a couple of
+      deliberate wrong passwords lock the rest out. That is the protection
+      working; distinct addresses are also the truthful model, since these are
+      different people.
+
+- [X] T034a Stop the operator console answering from a stale cache
+
+  - **Purpose**: quickstart section 6 says "open the tenant" and expects to see
+    a completed first login. It showed the previous answer.
+  - **Spec**: FR-020, SC-006 · US6
+  - **Touches**: `apps/web/src/lib/trpc-client.tsx`, `apps/web/src/app/(operator)/(signed-in)/admin/tenant-console.tsx`, `apps/web/src/app/(operator)/(signed-in)/admin/tenants/[tenantId]/tenant-detail.tsx`
+  - **Done when**: the console's three reads refetch on mount instead of being
+    served from the default 30-second cache; an E2E test asserts the flag flips
+    after navigating back into the tenant, with no reload.
+  - **Not in this task**: changing the global `staleTime`, which is right for
+    the tenant application.
+  - **Depends on**: T031.
+  - **Note**: SC-006 promises "within one page refresh", and a refresh did work,
+    so this was not a broken requirement — it was a requirement written loosely
+    enough to permit a screen that answers "has this landed yet?" with a
+    half-minute-old no. The console is a monitoring surface; it should not.
 
 ---
 
