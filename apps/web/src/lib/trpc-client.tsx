@@ -22,6 +22,24 @@ export const api = createTRPCReact<AppRouter>();
  */
 export const FRESH = { staleTime: 0, refetchOnMount: "always" } as const;
 
+/**
+ * Where the BFF is.
+ *
+ * Empty in the browser, so the request is relative and the app works from
+ * whatever origin it is actually served on — `localhost`, `127.0.0.1`, a LAN
+ * address, a preview URL. Building an absolute URL from `NEXT_PUBLIC_APP_URL`
+ * tied the app to exactly one hostname, which is a coupling nothing needed.
+ *
+ * On the server there is no origin to be relative to, so the configured one is
+ * used. Nothing fetches during SSR today — these queries run in Client
+ * Components after mount — but a relative URL there would fail silently if
+ * something ever did.
+ */
+function bffUrl(): string {
+  const origin = typeof window === "undefined" ? clientEnv.NEXT_PUBLIC_APP_URL : "";
+  return `${origin}/api/trpc`;
+}
+
 export function TRPCProvider({ children }: { children: ReactNode }) {
   const [queryClient] = useState(
     () =>
@@ -36,7 +54,7 @@ export function TRPCProvider({ children }: { children: ReactNode }) {
     api.createClient({
       links: [
         httpBatchLink({
-          url: `${clientEnv.NEXT_PUBLIC_APP_URL}/api/trpc`,
+          url: bffUrl(),
           transformer: superjson,
         }),
       ],
