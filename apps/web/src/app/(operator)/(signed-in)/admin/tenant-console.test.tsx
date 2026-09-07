@@ -7,6 +7,7 @@ const listQuery = vi.fn();
 const invalidate = vi.fn();
 
 vi.mock("~/lib/trpc-client", () => ({
+  FRESH: { staleTime: 0, refetchOnMount: "always" },
   api: {
     useUtils: () => ({ admin: { tenants: { list: { invalidate } } } }),
     admin: {

@@ -5,7 +5,7 @@ import { useEffect, useState, type FormEvent } from "react";
 
 import type { Language } from "~/i18n";
 import { admin } from "~/i18n/messages/admin";
-import { api } from "~/lib/trpc-client";
+import { FRESH, api } from "~/lib/trpc-client";
 
 import { CredentialNotice } from "./credential-notice";
 
@@ -15,8 +15,8 @@ import { CredentialNotice } from "./credential-notice";
  */
 export function TenantDetail({ tenantId }: { tenantId: string }) {
   const utils = api.useUtils();
-  const tenant = api.admin.tenants.get.useQuery({ tenantId });
-  const users = api.admin.users.listByTenant.useQuery({ tenantId });
+  const tenant = api.admin.tenants.get.useQuery({ tenantId }, FRESH);
+  const users = api.admin.users.listByTenant.useQuery({ tenantId }, FRESH);
 
   const [email, setEmail] = useState("");
   const [name, setName] = useState("");
