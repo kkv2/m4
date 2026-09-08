@@ -19,7 +19,7 @@
   },
   "devDependencies": {
     "@m4/config": "workspace:*",
-    "@types/node": "^22.10.7",
+    "@types/node": "^26.4.1",
     "eslint": "^10.9.1",
     "prisma": "^7.10.0",
     "typescript": "^5.7.3"
