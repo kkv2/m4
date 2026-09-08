@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import type { ReactNode } from "react";
 
@@ -7,7 +8,7 @@ import { getMessages, languageTag } from "~/i18n";
 import { LanguageProvider } from "~/i18n/language-provider";
 import { currentUser } from "~/server/auth/current";
 
-import { SettingsLink } from "./settings-link";
+import { SettingsControl } from "./settings-control";
 import { SignOutButton } from "./sign-out-button";
 
 /**
@@ -38,15 +39,16 @@ export default async function TenantLayout({ children }: { children: ReactNode }
     <LanguageProvider language={user.language}>
       <div lang={languageTag(user.language)} className="min-h-dvh">
         <header className="flex items-center justify-between border-b border-border-subtle px-6 py-3">
-          <div className="flex items-center gap-3">
+          {/* The mark is the way home. It names this surface too: the console an
+              operator uses and the one a tenant user uses look alike, and the
+              text beside the mark is what says which of the two you are in. */}
+          <Link href="/" title={messages.app.home} className="flex items-center gap-3">
             <Mark size={28} />
-            <span className="text-sm font-semibold tracking-tight">
-              {messages.common.productName}
-            </span>
-          </div>
+            <span className="text-sm font-semibold tracking-tight">{messages.app.consoleName}</span>
+          </Link>
           <div className="flex items-center gap-4">
             <AccountBadge displayName={user.name} email={user.email} />
-            <SettingsLink />
+            <SettingsControl />
             <SignOutButton />
           </div>
         </header>

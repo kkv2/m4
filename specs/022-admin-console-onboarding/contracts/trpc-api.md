@@ -94,9 +94,14 @@ per FR-004.
 | `list` | `operatorProcedure` | — | `{ id, name, defaultLanguage, userCount, conversationCount, createdAt }[]` |
 | `create` | `operatorProcedure` | `{ name: string (1..200, trimmed), defaultLanguage: "JA" \| "EN" }` | `{ id }` |
 | `get` | `operatorProcedure` | `{ tenantId: string (cuid) }` | as `list`, one row |
+| `update` | `operatorProcedure` | `{ tenantId: cuid, name: string (1..200, trimmed), defaultLanguage: "JA" \| "EN" }` | as `list`, one row |
 
 `userCount` and `conversationCount` are FR-013; both are aggregates, and
 `conversationCount` is structurally zero until issue #23 lands (FR-014).
+
+`update` takes exactly the fields `create` takes. The identifier is what tells
+two same-named customers apart, so nothing can change it, and there is no delete
+counterpart (FR-046).
 
 ## `admin.users` *(new router, `routers/admin/users.ts`)*
 
@@ -104,6 +109,7 @@ per FR-004.
 | --- | --- | --- | --- |
 | `listByTenant` | `operatorProcedure` | `{ tenantId: string (cuid) }` | `{ id, email, displayName, language, firstLoginCompletedAt }[]` |
 | `create` | `operatorProcedure` | `{ tenantId: cuid, email: email, displayName: string (1..100), language: "JA" \| "EN" }` | `{ id, generatedPassword: string }` |
+| `update` | `operatorProcedure` | `{ userId: cuid, displayName: string (1..100), language: "JA" \| "EN" }` | as `listByTenant`, one row |
 | `reissuePassword` | `operatorProcedure` | `{ userId: string (cuid) }` | `{ generatedPassword: string }` |
 
 - `create` rejects an address already registered anywhere on the platform, with a
@@ -112,9 +118,16 @@ per FR-004.
 - `generatedPassword` is the **only** place a password crosses the wire, and only
   in the response to the call that generated it (FR-003). It is never persisted
   in plaintext, never logged, and never returned by any read procedure.
+- `update` changes the display name and the language, and nothing else. FR-018
+  moves from "there is no such procedure" to "the input schema cannot carry an
+  address": an `email` smuggled into the request is stripped before the procedure
+  sees it. There is no `tenantId` either — moving a user between tenants would
+  carry their history across an isolation boundary.
+- `update` is not a credential change, so it leaves the password, both
+  first-login markers and the user's sessions alone.
 - `reissuePassword` ends the user's sessions (FR-023c) and leaves
   `firstLoginCompletedAt` untouched (FR-035).
-- Neither procedure has a delete counterpart (FR-046).
+- No procedure here has a delete counterpart (FR-046).
 
 ---
 

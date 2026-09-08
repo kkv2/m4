@@ -30,9 +30,11 @@ export function WelcomeSteps({
   const [language, setLanguage] = useState<Language>(operatorLanguage);
   const [currentStep, setCurrentStep] = useState(step);
   const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
 
   const messages = getMessages(language);
+  const mismatch = confirmPassword.length > 0 && newPassword !== confirmPassword;
 
   const confirmLanguage = api.onboarding.confirmLanguage.useMutation({
     onSuccess: () => setCurrentStep("password"),
@@ -77,6 +79,16 @@ export function WelcomeSteps({
   function onReplacePassword(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError(null);
+
+    // The password is typed twice and the two have to agree. This is the one
+    // screen where a typo is unrecoverable on its own: the password being
+    // replaced is the issued one, which this very submission kills, and the
+    // new one is never shown back.
+    if (newPassword !== confirmPassword) {
+      setError(messages.password.mismatch);
+      return;
+    }
+
     replacePassword.mutate({ newPassword });
   }
 
@@ -108,7 +120,7 @@ export function WelcomeSteps({
           </label>
 
           {error ? (
-            <p role="alert" className="text-sm text-red-400">
+            <p role="alert" className="text-sm text-danger">
               {error}
             </p>
           ) : null}
@@ -142,7 +154,7 @@ export function WelcomeSteps({
           />
 
           <label className="flex flex-col gap-1">
-            <span className="text-sm text-content-muted">
+            <span className="required-field text-sm text-content-muted">
               {messages.firstLogin.newPasswordLabel}
             </span>
             <input
@@ -156,15 +168,42 @@ export function WelcomeSteps({
             />
           </label>
 
-          {error ? (
-            <p role="alert" className="text-sm text-red-400">
+          <label className="flex flex-col gap-1">
+            <span className="required-field text-sm text-content-muted">
+              {messages.password.confirmLabel}
+            </span>
+            <input
+              type="password"
+              name="confirmPassword"
+              autoComplete="new-password"
+              required
+              aria-invalid={mismatch}
+              value={confirmPassword}
+              onChange={(event) => setConfirmPassword(event.target.value)}
+              className={`rounded-md border bg-surface-raised px-3 py-2 text-content outline-none focus:border-accent ${
+                mismatch ? "border-danger" : "border-border-subtle"
+              }`}
+            />
+          </label>
+
+          <p className="text-xs text-content-muted">{messages.common.requiredLegend}</p>
+
+          {/* Told as it is typed: the point of the second field is to catch the
+              typo before it costs anything. */}
+          {mismatch ? (
+            <p role="alert" className="text-sm text-danger">
+              {messages.password.mismatch}
+            </p>
+          ) : null}
+          {error && !mismatch ? (
+            <p role="alert" className="text-sm text-danger">
               {error}
             </p>
           ) : null}
 
           <button
             type="submit"
-            disabled={replacePassword.isPending}
+            disabled={replacePassword.isPending || mismatch}
             className="rounded-md bg-accent px-3 py-2 text-sm font-medium text-surface disabled:opacity-50"
           >
             {messages.firstLogin.passwordSubmit}

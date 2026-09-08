@@ -2,6 +2,7 @@
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { createTRPCReact } from "@trpc/react-query";
+import type { inferRouterOutputs } from "@trpc/server";
 import { httpBatchLink } from "@trpc/client";
 import { useState, type ReactNode } from "react";
 import superjson from "superjson";
@@ -10,6 +11,14 @@ import type { AppRouter } from "~/server/api/root";
 import { clientEnv } from "~/env/client";
 
 export const api = createTRPCReact<AppRouter>();
+
+/**
+ * What each procedure hands back, for components that pass a row around.
+ *
+ * Type-only, so it costs nothing at runtime and does not drag the router into
+ * the browser bundle — the same reason `AppRouter` above is a type import.
+ */
+export type RouterOutputs = inferRouterOutputs<AppRouter>;
 
 /**
  * Query options for reads that must not be served from cache.

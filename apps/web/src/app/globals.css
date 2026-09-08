@@ -8,6 +8,10 @@
   --color-content: oklch(0.94 0.005 265);
   --color-content-muted: oklch(0.72 0.012 265);
   --color-accent: oklch(0.72 0.15 250);
+  --color-danger: oklch(0.71 0.17 22);
+  /* The scrim behind a modal. Dark enough that the page reads as out of reach,
+     not so dark that the context is lost. */
+  --color-scrim: oklch(0.1 0.01 265 / 0.7);
 }
 
 :root {
@@ -17,4 +21,19 @@
 body {
   background-color: var(--color-surface);
   color: var(--color-content);
+}
+
+/*
+ * The marker on a required field's label.
+ *
+ * A pseudo-element rather than a character in the markup, for two reasons: the
+ * accessible name of the field stays the label's own words, and `required` on
+ * the input remains the single source of truth that assistive technology reads.
+ * This is decoration for the eye — it tells a sighted person which fields they
+ * cannot skip, which is exactly what a screen reader already gets for free.
+ */
+.required-field::after {
+  content: "*";
+  color: var(--color-danger);
+  margin-inline-start: 0.25rem;
 }

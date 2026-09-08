@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import type { ReactNode } from "react";
 
@@ -33,10 +34,13 @@ export default async function OperatorConsoleLayout({ children }: { children: Re
   return (
     <div lang="ja" className="min-h-dvh">
       <header className="flex items-center justify-between border-b border-border-subtle px-6 py-3">
-        <div className="flex items-center gap-3">
+        {/* The mark is the way home, as it is on every site — and it goes to the
+            console's home, not the tenant application's. The two surfaces share
+            a header shape and nothing else. */}
+        <Link href="/admin" title={admin.common.home} className="flex items-center gap-3">
           <Mark size={28} />
           <span className="text-sm font-semibold tracking-tight">{admin.consoleName}</span>
-        </div>
+        </Link>
         <div className="flex items-center gap-4">
           <AccountBadge email={operator.email} />
           <SignOutButton />

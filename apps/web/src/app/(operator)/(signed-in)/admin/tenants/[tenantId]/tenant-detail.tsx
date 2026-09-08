@@ -1,93 +1,30 @@
 "use client";
 
+import { ArrowLeftIcon, PencilSquareIcon, PlusIcon } from "@heroicons/react/24/outline";
 import Link from "next/link";
-import { useEffect, useState, type FormEvent } from "react";
+import { useState } from "react";
 
-import type { Language } from "~/i18n";
 import { admin } from "~/i18n/messages/admin";
 import { FRESH, api } from "~/lib/trpc-client";
 
-import { CredentialNotice } from "./credential-notice";
+import { TenantFormModal } from "../../tenant-form-modal";
+import { UserFormModal, type UserSummary } from "./user-form-modal";
 
 /**
- * One tenant: its summary, its users, and the two ways a credential is issued —
- * registering a user, and reissuing a lost password.
+ * One tenant: its summary, its users, and the dialogs that register, edit and
+ * reissue.
+ *
+ * Nothing on this screen is a form. Registering a user, editing one and showing
+ * the password that either of those produces all happen in a dialog about that
+ * one user, so the screen itself is only ever a list of who is here.
  */
 export function TenantDetail({ tenantId }: { tenantId: string }) {
-  const utils = api.useUtils();
   const tenant = api.admin.tenants.get.useQuery({ tenantId }, FRESH);
   const users = api.admin.users.listByTenant.useQuery({ tenantId }, FRESH);
 
-  const [email, setEmail] = useState("");
-  const [name, setName] = useState("");
-  const [language, setLanguage] = useState<Language | null>(null);
-  const [error, setError] = useState<string | null>(null);
-
-  /**
-   * The generated password, held in component state and nowhere else. It is
-   * never written to the query cache, so no refetch can bring it back.
-   */
-  const [issued, setIssued] = useState<{ email: string; password: string } | null>(null);
-
-  // FR-016: the language field defaults to the tenant's default at the moment
-  // the form is opened. The tenant loads asynchronously, so the default is
-  // applied once it arrives and not thereafter — an operator who has already
-  // chosen must not have their choice overwritten by a background refetch.
-  useEffect(() => {
-    if (language === null && tenant.data) setLanguage(tenant.data.defaultLanguage);
-  }, [language, tenant.data]);
-
-  const create = api.admin.users.create.useMutation({
-    onSuccess: async ({ generatedPassword }, variables) => {
-      setIssued({ email: variables.email, password: generatedPassword });
-      setEmail("");
-      setName("");
-      setLanguage(tenant.data?.defaultLanguage ?? null);
-      await Promise.all([
-        utils.admin.users.listByTenant.invalidate({ tenantId }),
-        utils.admin.tenants.get.invalidate({ tenantId }),
-      ]);
-    },
-    onError: (mutationError) => {
-      setError(
-        mutationError.data?.code === "CONFLICT"
-          ? admin.users.emailTaken
-          : admin.signIn.unexpectedError,
-      );
-    },
-  });
-
-  const reissue = api.admin.users.reissuePassword.useMutation({
-    onError: () => setError(admin.signIn.unexpectedError),
-  });
-
-  function onSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    setError(null);
-
-    if (email.trim().length === 0) {
-      setError(admin.users.emailRequired);
-      return;
-    }
-    if (name.trim().length === 0) {
-      setError(admin.users.nameRequired);
-      return;
-    }
-    if (language === null) return;
-
-    create.mutate({ tenantId, email, name, language });
-  }
-
-  function onReissue(userId: string, userEmail: string) {
-    setError(null);
-    reissue.mutate(
-      { userId },
-      {
-        onSuccess: ({ generatedPassword }) =>
-          setIssued({ email: userEmail, password: generatedPassword }),
-      },
-    );
-  }
+  /** null when closed; `{ user: null }` registers, a row edits that row. */
+  const [editingUser, setEditingUser] = useState<{ user: UserSummary | null } | null>(null);
+  const [editingTenant, setEditingTenant] = useState(false);
 
   if (tenant.isError) {
     return <p className="text-sm text-content-muted">{admin.tenants.notFound}</p>;
@@ -98,11 +35,26 @@ export function TenantDetail({ tenantId }: { tenantId: string }) {
       <div className="flex flex-col gap-2">
         <Link
           href="/admin"
-          className="text-sm text-content-muted underline-offset-4 hover:text-content hover:underline"
+          className="flex items-center gap-1 self-start text-sm text-content-muted underline-offset-4 hover:text-content hover:underline"
         >
+          <ArrowLeftIcon className="size-4" aria-hidden="true" />
           {admin.tenants.backToList}
         </Link>
-        <h1 className="text-lg font-semibold tracking-tight">{tenant.data?.name ?? ""}</h1>
+
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <h1 className="text-lg font-semibold tracking-tight">{tenant.data?.name ?? ""}</h1>
+          {tenant.data ? (
+            <button
+              type="button"
+              onClick={() => setEditingTenant(true)}
+              className="flex items-center gap-1.5 rounded-md border border-border-subtle px-3 py-1.5 text-sm text-content-muted hover:text-content"
+            >
+              <PencilSquareIcon className="size-4" aria-hidden="true" />
+              {admin.common.edit}
+            </button>
+          ) : null}
+        </div>
+
         {tenant.data ? (
           <dl className="flex flex-wrap gap-x-6 gap-y-1 text-sm text-content-muted">
             <div className="flex gap-2">
@@ -125,84 +77,21 @@ export function TenantDetail({ tenantId }: { tenantId: string }) {
         ) : null}
       </div>
 
-      {issued ? (
-        <CredentialNotice
-          email={issued.email}
-          password={issued.password}
-          onDismiss={() => setIssued(null)}
-        />
-      ) : null}
-
       <section className="flex flex-col gap-4">
-        <h2 className="text-base font-semibold tracking-tight">{admin.users.registerHeading}</h2>
-
-        {/* POST so that an un-hydrated native submission cannot put the field
-            values in the query string. */}
-        <form method="post" onSubmit={onSubmit} className="flex flex-col gap-4 sm:max-w-md">
-          <div className="flex flex-col gap-1">
-            {/* The hint sits outside the label: inside it, it would become part
-                of the field's accessible name. */}
-            <label className="flex flex-col gap-1">
-              <span className="text-sm text-content-muted">{admin.users.emailLabel}</span>
-              <input
-                type="email"
-                name="email"
-                value={email}
-                placeholder={admin.users.emailPlaceholder}
-                aria-describedby="email-immutable"
-                onChange={(event) => setEmail(event.target.value)}
-                className="rounded-md border border-border-subtle bg-surface-raised px-3 py-2 text-content outline-none focus:border-accent"
-              />
-            </label>
-            <p id="email-immutable" className="text-xs text-content-muted">
-              {admin.users.emailImmutable}
-            </p>
-          </div>
-
-          <label className="flex flex-col gap-1">
-            <span className="text-sm text-content-muted">{admin.users.nameLabel}</span>
-            <input
-              type="text"
-              name="name"
-              value={name}
-              placeholder={admin.users.namePlaceholder}
-              onChange={(event) => setName(event.target.value)}
-              className="rounded-md border border-border-subtle bg-surface-raised px-3 py-2 text-content outline-none focus:border-accent"
-            />
-          </label>
-
-          <label className="flex flex-col gap-1">
-            <span className="text-sm text-content-muted">{admin.users.languageLabel}</span>
-            <select
-              name="language"
-              value={language ?? ""}
-              disabled={language === null}
-              onChange={(event) => setLanguage(event.target.value as Language)}
-              className="rounded-md border border-border-subtle bg-surface-raised px-3 py-2 text-content outline-none focus:border-accent"
-            >
-              <option value="JA">{admin.language.JA}</option>
-              <option value="EN">{admin.language.EN}</option>
-            </select>
-          </label>
-
-          {error ? (
-            <p role="alert" className="text-sm text-red-400">
-              {error}
-            </p>
-          ) : null}
-
+        <div className="flex items-center justify-between gap-4">
+          <h2 className="text-base font-semibold tracking-tight">{admin.users.heading}</h2>
           <button
-            type="submit"
-            disabled={create.isPending || language === null}
-            className="self-start rounded-md bg-accent px-3 py-2 text-sm font-medium text-surface disabled:opacity-50"
+            type="button"
+            onClick={() => setEditingUser({ user: null })}
+            // FR-016 needs the tenant's default language, so registration waits
+            // for the tenant rather than opening on a guess.
+            disabled={!tenant.data}
+            className="flex items-center gap-1.5 rounded-md bg-accent px-3 py-2 text-sm font-medium text-surface disabled:opacity-50"
           >
-            {admin.users.submit}
+            <PlusIcon className="size-4" aria-hidden="true" />
+            {admin.users.registerHeading}
           </button>
-        </form>
-      </section>
-
-      <section className="flex flex-col gap-4">
-        <h2 className="text-base font-semibold tracking-tight">{admin.users.heading}</h2>
+        </div>
 
         {users.isPending ? null : users.data && users.data.length > 0 ? (
           <div className="overflow-x-auto">
@@ -214,7 +103,7 @@ export function TenantDetail({ tenantId }: { tenantId: string }) {
                   <th className="py-2 pr-4 font-medium">{admin.users.columnId}</th>
                   <th className="py-2 pr-4 font-medium">{admin.users.columnLanguage}</th>
                   <th className="py-2 pr-4 font-medium">{admin.users.columnFirstLogin}</th>
-                  <th className="py-2 font-medium" />
+                  <th className="py-2 font-medium">{admin.users.columnActions}</th>
                 </tr>
               </thead>
               <tbody>
@@ -233,12 +122,11 @@ export function TenantDetail({ tenantId }: { tenantId: string }) {
                     <td className="py-2">
                       <button
                         type="button"
-                        onClick={() => onReissue(user.id, user.email)}
-                        disabled={reissue.isPending}
-                        title={admin.users.reissueConfirm}
-                        className="text-xs text-content-muted underline-offset-4 hover:text-content hover:underline disabled:opacity-50"
+                        onClick={() => setEditingUser({ user })}
+                        className="flex items-center gap-1 text-xs text-content-muted underline-offset-4 hover:text-content hover:underline"
                       >
-                        {admin.users.reissue}
+                        <PencilSquareIcon className="size-4" aria-hidden="true" />
+                        {admin.common.edit}
                       </button>
                     </td>
                   </tr>
@@ -250,6 +138,19 @@ export function TenantDetail({ tenantId }: { tenantId: string }) {
           <p className="text-sm text-content-muted">{admin.users.empty}</p>
         )}
       </section>
+
+      {editingUser && tenant.data ? (
+        <UserFormModal
+          tenantId={tenantId}
+          user={editingUser.user}
+          defaultLanguage={tenant.data.defaultLanguage}
+          onClose={() => setEditingUser(null)}
+        />
+      ) : null}
+
+      {editingTenant && tenant.data ? (
+        <TenantFormModal tenant={tenant.data} onClose={() => setEditingTenant(false)} />
+      ) : null}
     </div>
   );
 }

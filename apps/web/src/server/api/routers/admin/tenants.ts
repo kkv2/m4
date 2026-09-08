@@ -1,4 +1,4 @@
-import { Language } from "@m4/db";
+import { Language, Prisma } from "@m4/db";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 
@@ -19,7 +19,10 @@ const languageSchema = z.nativeEnum(Language);
 
 const tenantId = z.string().cuid();
 
-/** FR-010: display name and default language, nothing else. */
+/**
+ * FR-010: display name and default language, nothing else. Shared by
+ * registration and by the edit form, which may change exactly the same fields.
+ */
 const registration = z.object({
   name: z.string().trim().min(1).max(200),
   defaultLanguage: languageSchema.default(Language.JA),
@@ -100,5 +103,26 @@ export const adminTenantsRouter = createTRPCRouter({
       });
 
       return tenant;
+    }),
+
+  update: operatorProcedure
+    .input(z.object({ tenantId }).merge(registration))
+    .mutation(async ({ ctx, input }): Promise<TenantSummary> => {
+      // Only the two fields registration itself takes. The identifier is what
+      // tells two same-named customers apart, so nothing here may change it,
+      // and the counts are derived rather than stored.
+      try {
+        const row = await ctx.prisma.tenant.update({
+          where: { id: input.tenantId },
+          data: { name: input.name, defaultLanguage: input.defaultLanguage },
+          select: summarySelect,
+        });
+        return toSummary(row);
+      } catch (error) {
+        if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2025") {
+          throw new TRPCError({ code: "NOT_FOUND", message: "No such tenant." });
+        }
+        throw error;
+      }
     }),
 });

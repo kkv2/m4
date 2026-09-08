@@ -64,6 +64,11 @@ export async function signInAsOperator(page: Page, operator: Credentials): Promi
   await page.waitForURL("**/admin");
 }
 
+/** The dialog the console registers and edits in. */
+export function dialog(page: Page) {
+  return page.getByRole("dialog");
+}
+
 /** Register a tenant from the console and open its detail screen. */
 export async function registerTenant(
   page: Page,
@@ -72,22 +77,32 @@ export async function registerTenant(
   const name = options.name ?? unique("テナント");
 
   await page.goto("/admin");
-  await page.locator("input[name=name]").fill(name);
+  await page.getByRole("button", { name: "テナントを登録" }).click();
+
+  const form = dialog(page);
+  await form.locator("input[name=name]").fill(name);
   if (options.defaultLanguage) {
-    await page.locator("select[name=defaultLanguage]").selectOption(options.defaultLanguage);
+    await form.locator("select[name=defaultLanguage]").selectOption(options.defaultLanguage);
   }
-  await page.getByRole("button", { name: "登録" }).click();
+  await form.getByRole("button", { name: "登録" }).click();
 
   const row = page.getByRole("row").filter({ hasText: name });
   await row.waitFor();
   await row.getByRole("link", { name: "詳細" }).click();
   await page.waitForURL("**/admin/tenants/**");
-  // The language field is empty until the tenant loads.
-  await page.waitForFunction(() =>
-    Boolean(document.querySelector<HTMLSelectElement>("select[name=language]")?.value),
-  );
 
   return { name };
+}
+
+/** Open the user registration dialog on the tenant detail screen. */
+export async function openUserForm(page: Page) {
+  // Registration waits for the tenant, because the language field starts from
+  // that tenant's default.
+  const open = page.getByRole("button", { name: "ユーザーを登録" });
+  await open.waitFor();
+  await open.click();
+
+  return dialog(page);
 }
 
 /**
@@ -100,9 +115,10 @@ export async function registerUser(
 ): Promise<Credentials> {
   const email = options.email ?? uniqueEmail("member");
 
-  await page.locator("input[name=email]").fill(email);
-  await page.locator("input[name=name]").fill(options.name ?? "Member One");
-  await page.getByRole("button", { name: "登録" }).click();
+  const form = await openUserForm(page);
+  await form.locator("input[name=email]").fill(email);
+  await form.locator("input[name=name]").fill(options.name ?? "Member One");
+  await form.getByRole("button", { name: "登録" }).click();
 
   const notice = page.getByRole("alert", { name: "パスワードを控えてください" });
   await notice.waitFor();
@@ -110,7 +126,9 @@ export async function registerUser(
   if (!password) {
     throw new Error("the console did not show a generated password");
   }
+  // Dismissing after a registration is what closes the dialog.
   await page.getByRole("button", { name: "控えました" }).click();
+  await dialog(page).waitFor({ state: "detached" });
 
   return { email, password };
 }
@@ -135,4 +153,30 @@ export function errorAlert(page: Page) {
  */
 export function firstLoginCell(page: Page, email: string) {
   return page.getByRole("row").filter({ hasText: email }).getByRole("cell").nth(4);
+}
+
+/**
+ * Take a freshly registered user all the way into the application: sign in with
+ * what the operator handed over, then finish both first-login steps.
+ */
+export async function signInAndOnboard(
+  page: Page,
+  member: Credentials,
+  options: { password?: string } = {},
+): Promise<Credentials> {
+  const password = options.password ?? `${unique("passphrase")} orchard lantern`;
+
+  await page.goto("/sign-in");
+  await page.getByLabel("メールアドレス").fill(member.email);
+  await page.getByLabel("パスワード").fill(member.password);
+  await page.getByRole("button", { name: "ログイン" }).click();
+  await page.waitForURL("**/welcome");
+
+  await page.getByRole("button", { name: "次へ" }).click();
+  await page.locator("input[name=newPassword]").fill(password);
+  await page.locator("input[name=confirmPassword]").fill(password);
+  await page.getByRole("button", { name: "設定して開始" }).click();
+  await page.waitForURL("/");
+
+  return { email: member.email, password };
 }
