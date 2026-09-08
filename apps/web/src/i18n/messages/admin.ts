@@ -8,7 +8,17 @@
  * screens that are never shown in English.
  */
 export const admin = {
-  consoleName: "M4 運営コンソール",
+  consoleName: "運営コンソール",
+  common: {
+    close: "閉じる",
+    cancel: "キャンセル",
+    save: "保存",
+    saved: "変更を保存しました。",
+    edit: "編集",
+    home: "テナント一覧へ",
+    requiredLegend: "* は必須項目です。",
+    readOnlyNote: "この項目は変更できません。",
+  },
   signIn: {
     title: "運営コンソールにログイン",
     emailLabel: "メールアドレス",
@@ -27,6 +37,7 @@ export const admin = {
   tenants: {
     heading: "テナント",
     registerHeading: "テナントを登録",
+    editHeading: "テナントを編集",
     nameLabel: "表示名",
     namePlaceholder: "株式会社サンプル",
     defaultLanguageLabel: "デフォルト言語",
@@ -39,6 +50,7 @@ export const admin = {
     columnLanguage: "デフォルト言語",
     columnUsers: "ユーザー数",
     columnChats: "チャット数",
+    columnActions: "操作",
     detail: "詳細",
     backToList: "テナント一覧へ戻る",
     notFound: "そのテナントは存在しません。",
@@ -46,6 +58,7 @@ export const admin = {
   users: {
     heading: "ユーザー",
     registerHeading: "ユーザーを登録",
+    editHeading: "ユーザーを編集",
     emailLabel: "メールアドレス",
     emailPlaceholder: "user@example.com",
     emailImmutable: "登録後は変更できません。",
@@ -62,6 +75,8 @@ export const admin = {
     columnId: "ユーザー ID",
     columnLanguage: "言語",
     columnFirstLogin: "初回ログイン",
+    columnActions: "操作",
+    firstLoginLabel: "初回ログイン",
     firstLoginDone: "完了",
     firstLoginPending: "未完了",
     reissue: "パスワードを再発行",

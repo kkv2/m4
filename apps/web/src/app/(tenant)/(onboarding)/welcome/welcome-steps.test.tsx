@@ -101,14 +101,49 @@ describe("the password step", () => {
     ).toBeInTheDocument();
   });
 
-  it("submits the new password", async () => {
+  it("submits the new password once both copies agree", async () => {
     const user = userEvent.setup();
     renderAt("password");
 
     await user.type(screen.getByLabelText("新しいパスワード"), "tumbling walnut ledger");
+    await user.type(screen.getByLabelText("新しいパスワード（確認）"), "tumbling walnut ledger");
     await user.click(screen.getByRole("button", { name: "設定して開始" }));
 
     expect(replaceMutate).toHaveBeenCalledWith({ newPassword: "tumbling walnut ledger" });
+  });
+
+  it("says so as soon as the two copies diverge, and refuses to submit", async () => {
+    const user = userEvent.setup();
+    renderAt("password");
+
+    await user.type(screen.getByLabelText("新しいパスワード"), "tumbling walnut ledger");
+    await user.type(screen.getByLabelText("新しいパスワード（確認）"), "tumbling walnut ledgar");
+
+    expect(screen.getByRole("alert")).toHaveTextContent("新しいパスワードが一致しません。");
+    expect(screen.getByRole("button", { name: "設定して開始" })).toBeDisabled();
+    expect(replaceMutate).not.toHaveBeenCalled();
+  });
+
+  it("stops complaining once they agree again", async () => {
+    const user = userEvent.setup();
+    renderAt("password");
+
+    await user.type(screen.getByLabelText("新しいパスワード"), "tumbling walnut ledger");
+    await user.type(screen.getByLabelText("新しいパスワード（確認）"), "tumbling walnut ledge");
+    expect(screen.getByRole("alert")).toBeInTheDocument();
+
+    await user.type(screen.getByLabelText("新しいパスワード（確認）"), "r");
+
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "設定して開始" })).toBeEnabled();
+  });
+
+  it("marks its required fields, and says what the marker means", () => {
+    renderAt("password");
+
+    expect(screen.getByLabelText("新しいパスワード")).toBeRequired();
+    expect(screen.getByLabelText("新しいパスワード（確認）")).toBeRequired();
+    expect(screen.getByText("* は必須項目です。")).toBeInTheDocument();
   });
 
   it("names the rule that failed, rather than saying the password is invalid", () => {

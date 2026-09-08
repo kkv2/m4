@@ -14,8 +14,9 @@ import { createTRPCRouter, operatorProcedure } from "../../trpc";
  * yields no ambient `tenantId`, so every read that concerns one tenant names it
  * as an explicit input.
  *
- * There is no update procedure for the email address (FR-018) and no delete
- * procedure for anything (FR-046).
+ * `update` changes a user's display name and language. There is no update
+ * procedure for the email address (FR-018) and no delete procedure for anything
+ * (FR-046).
  */
 
 const cuid = z.string().cuid();
@@ -108,6 +109,32 @@ export const adminUsersRouter = createTRPCRouter({
         // same address cannot both succeed.
         if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
           addressTaken();
+        }
+        throw error;
+      }
+    }),
+
+  update: operatorProcedure
+    .input(
+      z.object({
+        userId: cuid,
+        name: z.string().trim().min(1).max(100),
+        language: z.nativeEnum(Language),
+      }),
+    )
+    .mutation(async ({ ctx, input }): Promise<UserSummary> => {
+      // The display name and the language, and nothing else. There is no email
+      // address here (FR-018), and no tenant either: moving a user between
+      // tenants would carry their conversations across an isolation boundary.
+      try {
+        return await ctx.prisma.user.update({
+          where: { id: input.userId },
+          data: { name: input.name, language: input.language },
+          select: summarySelect,
+        });
+      } catch (error) {
+        if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2025") {
+          throw new TRPCError({ code: "NOT_FOUND", message: "No such user." });
         }
         throw error;
       }

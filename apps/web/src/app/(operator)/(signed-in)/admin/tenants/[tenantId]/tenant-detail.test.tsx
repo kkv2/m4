@@ -1,15 +1,9 @@
-import { act, render, screen, within } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const createMutate = vi.fn();
-const reissueMutate = vi.fn();
 const tenantQuery = vi.fn();
 const usersQuery = vi.fn();
-let createOptions: {
-  onSuccess?: (data: { generatedPassword: string }, variables: { email: string }) => void;
-  onError?: (error: { data?: { code?: string } }) => void;
-} = {};
 
 vi.mock("next/link", () => ({
   default: ({ href, children }: { href: string; children: React.ReactNode }) => (
@@ -23,22 +17,20 @@ vi.mock("~/lib/trpc-client", () => ({
     useUtils: () => ({
       admin: {
         users: { listByTenant: { invalidate: vi.fn() } },
-        tenants: { get: { invalidate: vi.fn() } },
+        tenants: { get: { invalidate: vi.fn() }, list: { invalidate: vi.fn() } },
       },
     }),
     admin: {
-      tenants: { get: { useQuery: () => tenantQuery() as unknown } },
+      tenants: {
+        get: { useQuery: () => tenantQuery() as unknown },
+        create: { useMutation: () => ({ mutate: vi.fn(), isPending: false }) },
+        update: { useMutation: () => ({ mutate: vi.fn(), isPending: false }) },
+      },
       users: {
         listByTenant: { useQuery: () => usersQuery() as unknown },
-        create: {
-          useMutation: (options: typeof createOptions) => {
-            createOptions = options;
-            return { mutate: createMutate, isPending: false };
-          },
-        },
-        reissuePassword: {
-          useMutation: () => ({ mutate: reissueMutate, isPending: false }),
-        },
+        create: { useMutation: () => ({ mutate: vi.fn(), isPending: false }) },
+        update: { useMutation: () => ({ mutate: vi.fn(), isPending: false }) },
+        reissuePassword: { useMutation: () => ({ mutate: vi.fn(), isPending: false }) },
       },
     },
   },
@@ -78,140 +70,8 @@ const aUser = {
 
 beforeEach(() => {
   vi.clearAllMocks();
-  createOptions = {};
   withTenant();
   withUsers([]);
-});
-
-describe("the registration form", () => {
-  it("pre-selects the tenant's default language when it is Japanese", () => {
-    render(<TenantDetail tenantId={TENANT_ID} />);
-
-    expect(screen.getByLabelText("言語")).toHaveValue("JA");
-  });
-
-  it("pre-selects the tenant's default language when it is English", () => {
-    withTenant({ defaultLanguage: "EN" });
-    render(<TenantDetail tenantId={TENANT_ID} />);
-
-    expect(screen.getByLabelText("言語")).toHaveValue("EN");
-  });
-
-  it("takes each tenant's own default, not the one before it", () => {
-    // Moving between two tenants keeps the same route segment. Next.js remounts
-    // the page component when the parameter changes, so the field starts from
-    // null again — this pins that behaviour, because if it ever stopped holding,
-    // an operator would silently register users in the wrong language.
-    const { unmount } = render(<TenantDetail tenantId={TENANT_ID} />);
-    expect(screen.getByLabelText("言語")).toHaveValue("JA");
-    unmount();
-
-    withTenant({ id: "clother1other1other1other", defaultLanguage: "EN" });
-    render(<TenantDetail tenantId="clother1other1other1other" />);
-
-    expect(screen.getByLabelText("言語")).toHaveValue("EN");
-  });
-
-  it("says the address cannot be changed later", () => {
-    render(<TenantDetail tenantId={TENANT_ID} />);
-
-    expect(screen.getByText("登録後は変更できません。")).toBeInTheDocument();
-  });
-
-  it("refuses an empty address, then an empty display name, and calls nothing", async () => {
-    const user = userEvent.setup();
-    render(<TenantDetail tenantId={TENANT_ID} />);
-
-    await user.click(screen.getByRole("button", { name: "登録" }));
-    expect(screen.getByRole("alert")).toHaveTextContent("メールアドレスを入力してください。");
-
-    await user.type(screen.getByLabelText("メールアドレス"), "hanako@example.com");
-    await user.click(screen.getByRole("button", { name: "登録" }));
-    expect(screen.getByRole("alert")).toHaveTextContent("表示名を入力してください。");
-
-    expect(createMutate).not.toHaveBeenCalled();
-  });
-
-  it("submits the address, display name and language", async () => {
-    const user = userEvent.setup();
-    render(<TenantDetail tenantId={TENANT_ID} />);
-
-    await user.type(screen.getByLabelText("メールアドレス"), "hanako@example.com");
-    await user.type(screen.getByLabelText("表示名"), "山田 花子");
-    await user.selectOptions(screen.getByLabelText("言語"), "EN");
-    await user.click(screen.getByRole("button", { name: "登録" }));
-
-    expect(createMutate).toHaveBeenCalledWith({
-      tenantId: TENANT_ID,
-      email: "hanako@example.com",
-      name: "山田 花子",
-      language: "EN",
-    });
-  });
-
-  it("is a POST, so an un-hydrated native submit cannot leak the fields", () => {
-    const { container } = render(<TenantDetail tenantId={TENANT_ID} />);
-
-    expect(container.querySelector("form")).toHaveAttribute("method", "post");
-  });
-
-  it("says the address is taken, without naming the tenant that holds it", () => {
-    render(<TenantDetail tenantId={TENANT_ID} />);
-
-    act(() => createOptions.onError?.({ data: { code: "CONFLICT" } }));
-
-    const alert = screen.getByRole("alert");
-    expect(alert).toHaveTextContent("このメールアドレスは既に使用されています。");
-    expect(alert.textContent).not.toContain("株式会社");
-  });
-
-  it("falls back to a generic message for any other failure", () => {
-    render(<TenantDetail tenantId={TENANT_ID} />);
-
-    act(() => createOptions.onError?.({ data: { code: "INTERNAL_SERVER_ERROR" } }));
-
-    expect(screen.getByRole("alert")).toHaveTextContent("予期しないエラーが発生しました。");
-  });
-});
-
-describe("the generated password", () => {
-  it("is shown once, with a warning that it cannot be read back", () => {
-    render(<TenantDetail tenantId={TENANT_ID} />);
-
-    act(() => {
-      createOptions.onSuccess?.(
-        { generatedPassword: "S3cretGeneratedValue123" },
-        { email: "hanako@example.com" },
-      );
-    });
-
-    const notice = screen.getByRole("alert", { name: "パスワードを控えてください" });
-    expect(within(notice).getByText("S3cretGeneratedValue123")).toBeInTheDocument();
-    expect(within(notice).getByText(/一度だけ表示されます/)).toBeInTheDocument();
-  });
-
-  it("disappears once dismissed, and does not come back", async () => {
-    const user = userEvent.setup();
-    render(<TenantDetail tenantId={TENANT_ID} />);
-
-    act(() => {
-      createOptions.onSuccess?.(
-        { generatedPassword: "S3cretGeneratedValue123" },
-        { email: "hanako@example.com" },
-      );
-    });
-    await user.click(screen.getByRole("button", { name: "控えました" }));
-
-    expect(screen.queryByText("S3cretGeneratedValue123")).not.toBeInTheDocument();
-  });
-
-  it("is not rendered at all before a registration happens", () => {
-    render(<TenantDetail tenantId={TENANT_ID} />);
-
-    expect(
-      screen.queryByRole("alert", { name: "パスワードを控えてください" }),
-    ).not.toBeInTheDocument();
-  });
 });
 
 describe("the user list", () => {
@@ -242,28 +102,8 @@ describe("the user list", () => {
     withUsers([aUser]);
     render(<TenantDetail tenantId={TENANT_ID} />);
 
-    const row = screen.getByRole("cell", { name: "hanako@example.com" });
-    expect(within(row).queryByRole("textbox")).not.toBeInTheDocument();
-  });
-
-  it("offers a reissue per user, and passes that user's id", async () => {
-    const user = userEvent.setup();
-    withUsers([aUser]);
-    render(<TenantDetail tenantId={TENANT_ID} />);
-
-    await user.click(screen.getByRole("button", { name: "パスワードを再発行" }));
-
-    expect(reissueMutate).toHaveBeenCalledWith({ userId: aUser.id }, expect.anything());
-  });
-
-  it("warns that a reissue invalidates the current password and sessions", () => {
-    withUsers([aUser]);
-    render(<TenantDetail tenantId={TENANT_ID} />);
-
-    expect(screen.getByRole("button", { name: "パスワードを再発行" })).toHaveAttribute(
-      "title",
-      expect.stringContaining("無効になります"),
-    );
+    const cell = screen.getByRole("cell", { name: "hanako@example.com" });
+    expect(within(cell).queryByRole("textbox")).not.toBeInTheDocument();
   });
 });
 
@@ -291,5 +131,59 @@ describe("the tenant summary", () => {
       "href",
       "/admin",
     );
+  });
+
+  it("edits the tenant in a dialog of its own", async () => {
+    const user = userEvent.setup();
+    render(<TenantDetail tenantId={TENANT_ID} />);
+
+    await user.click(screen.getByRole("button", { name: "編集" }));
+
+    expect(screen.getByRole("dialog", { name: "テナントを編集" })).toBeInTheDocument();
+  });
+});
+
+describe("the screen itself", () => {
+  it("carries no form until one is asked for", () => {
+    withUsers([aUser]);
+    const { container } = render(<TenantDetail tenantId={TENANT_ID} />);
+
+    // The whole point of the dialogs: a screen listing several users no longer
+    // has a form on it that could belong to any of them.
+    expect(container.querySelector("form")).toBeNull();
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  });
+
+  it("opens registration on the tenant's default language", async () => {
+    const user = userEvent.setup();
+    withTenant({ defaultLanguage: "EN" });
+    render(<TenantDetail tenantId={TENANT_ID} />);
+
+    await user.click(screen.getByRole("button", { name: "ユーザーを登録" }));
+
+    // FR-016.
+    const dialog = screen.getByRole("dialog", { name: "ユーザーを登録" });
+    expect(within(dialog).getByLabelText("言語")).toHaveValue("EN");
+  });
+
+  it("waits for the tenant before offering registration, so the default is real", () => {
+    tenantQuery.mockReturnValue({ isError: false, data: undefined });
+    render(<TenantDetail tenantId={TENANT_ID} />);
+
+    expect(screen.getByRole("button", { name: "ユーザーを登録" })).toBeDisabled();
+  });
+
+  it("edits one named user, not whichever form happens to be on screen", async () => {
+    const user = userEvent.setup();
+    withUsers([aUser, { ...aUser, id: "cluser2user2user2user2use", email: "taro@example.com" }]);
+    render(<TenantDetail tenantId={TENANT_ID} />);
+
+    const row = screen.getByRole("row", { name: /taro@example.com/ });
+    await user.click(within(row).getByRole("button", { name: "編集" }));
+
+    // Both users are on the list; the dialog says which of them it is about.
+    const dialog = screen.getByRole("dialog", { name: "ユーザーを編集" });
+    expect(within(dialog).getByText("taro@example.com")).toBeInTheDocument();
+    expect(within(dialog).queryByText("hanako@example.com")).not.toBeInTheDocument();
   });
 });

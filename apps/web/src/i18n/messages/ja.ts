@@ -13,7 +13,11 @@ export const ja = {
     save: "保存",
     cancel: "キャンセル",
     submit: "送信",
+    close: "閉じる",
     loading: "読み込み中…",
+    // The forms are mostly required fields today, so the marker exists as much
+    // to make an optional one recognisable later as to flag the required ones.
+    requiredLegend: "* は必須項目です。",
     unexpectedError: "予期しないエラーが発生しました。時間をおいて再度お試しください。",
   },
   signIn: {
@@ -44,6 +48,10 @@ export const ja = {
     sameAsIssued: "配布されたパスワードとは異なるものにしてください。",
     currentIncorrect: "現在のパスワードが正しくありません。",
     sameAsCurrent: "現在のパスワードとは異なるものにしてください。",
+    // The confirmation field exists because a typo in a password nobody can
+    // read back locks the account out of itself.
+    confirmLabel: "新しいパスワード（確認）",
+    mismatch: "新しいパスワードが一致しません。",
   },
   settings: {
     title: "設定",
@@ -57,9 +65,12 @@ export const ja = {
     changePassword: "パスワードを変更",
     saved: "変更を保存しました。",
     shortcutHint: "⌘ + , でも開けます",
-    close: "閉じる",
   },
   app: {
+    // What this surface is, next to the mark: the counterpart of the operator
+    // console, and the thing that tells you at a glance which one you are in.
+    consoleName: "ユーザーコンソール",
+    home: "ホームへ",
     welcome: "ようこそ",
     // The application itself arrives with issue #23; until then the shell says
     // plainly that first login worked and nothing is broken.

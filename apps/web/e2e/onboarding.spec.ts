@@ -5,6 +5,7 @@ import {
   createOperator,
   firstLoginCell,
   newClientContext,
+  openUserForm,
   registerTenant,
   registerUser,
   signInAsOperator,
@@ -29,7 +30,8 @@ test("an operator creates a customer, and their first person signs in", async ({
 
   // US3: register a tenant and a user, and capture the credential shown once.
   const tenant = await registerTenant(console_, { defaultLanguage: "EN" });
-  await expect(console_.locator("select[name=language]")).toHaveValue("EN");
+  await expect((await openUserForm(console_)).locator("select[name=language]")).toHaveValue("EN");
+  await console_.keyboard.press("Escape");
   const member = await registerUser(console_, { name: "Member One" });
 
   // US6: the console reports the user as not having finished.
@@ -55,6 +57,7 @@ test("an operator creates a customer, and their first person signs in", async ({
   await expect(app.getByRole("heading", { name: "パスワードを変更してください" })).toBeVisible();
 
   await app.locator("input[name=newPassword]").fill("marigold trellis cadence");
+  await app.locator("input[name=confirmPassword]").fill("marigold trellis cadence");
   await app.getByRole("button", { name: "設定して開始" }).click();
   await app.waitForURL("/");
   await expect(app.getByRole("heading", { level: 1 })).toContainText("Member One");
@@ -105,10 +108,10 @@ test("the first-login steps are resumable, and cannot be skipped", async ({ brow
   await app.getByRole("button", { name: "ログイン" }).click();
   await app.waitForURL("**/welcome");
 
-  // FR-034: the application is closed until both steps are done.
+  // FR-034: the application is closed until both steps are done. Settings are
+  // part of the application shell now rather than a URL of their own, so the
+  // gate that keeps this user out of `/` keeps them out of settings too.
   await app.goto("/");
-  await expect(app).toHaveURL(/\/welcome$/);
-  await app.goto("/settings");
   await expect(app).toHaveURL(/\/welcome$/);
 
   // Abandon after the language step, then come back.
@@ -117,6 +120,13 @@ test("the first-login steps are resumable, and cannot be skipped", async ({ brow
   await app.goto("/");
   await expect(app).toHaveURL(/\/welcome$/);
   await expect(app.getByRole("heading", { name: "パスワードを変更してください" })).toBeVisible();
+
+  // A mistyped confirmation is caught here rather than by the server, and
+  // nothing is sent until the two agree.
+  await app.locator("input[name=newPassword]").fill("marigold trellis cadence");
+  await app.locator("input[name=confirmPassword]").fill("marigold trellis cadenc");
+  await expect(errorAlert(app)).toHaveText("新しいパスワードが一致しません。");
+  await expect(app.getByRole("button", { name: "設定して開始" })).toBeDisabled();
 
   // FR-032: each rule refuses by name.
   const refusals: [string, string][] = [
@@ -127,11 +137,13 @@ test("the first-login steps are resumable, and cannot be skipped", async ({ brow
   ];
   for (const [attempt, message] of refusals) {
     await app.locator("input[name=newPassword]").fill(attempt);
+    await app.locator("input[name=confirmPassword]").fill(attempt);
     await app.getByRole("button", { name: "設定して開始" }).click();
     await expect(errorAlert(app)).toHaveText(message);
   }
 
   await app.locator("input[name=newPassword]").fill("marigold trellis cadence");
+  await app.locator("input[name=confirmPassword]").fill("marigold trellis cadence");
   await app.getByRole("button", { name: "設定して開始" }).click();
   await app.waitForURL("/");
 });

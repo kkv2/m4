@@ -138,8 +138,14 @@ describe("admin.tenants.list", () => {
     const { id } = await caller.admin.tenants.create({ name });
     const list = await caller.admin.tenants.list();
 
-    expect(list[0]?.id).toBe(id);
     expect(list.find((t) => t.id === id)?.name).toBe(name);
+
+    // Ordering is asserted as a property of the list rather than by expecting
+    // this tenant at position zero: the suite runs in parallel against one
+    // database, so another file's registration can legitimately be newer by the
+    // time this read happens.
+    const timestamps = list.map((t) => t.createdAt.getTime());
+    expect(timestamps).toEqual([...timestamps].sort((a, b) => b - a));
   });
 
   it("carries the same counts as get", async () => {
@@ -152,6 +158,80 @@ describe("admin.tenants.list", () => {
 
     expect(row?.userCount).toBe(1);
     expect(row?.conversationCount).toBe(0);
+  });
+});
+
+describe("admin.tenants.update", () => {
+  it("changes the display name and the default language", async () => {
+    const { caller } = await operatorCaller();
+    const tenant = await createTestTenant({ defaultLanguage: Language.JA });
+    const renamed = `Renamed ${uniqueSuffix()}`;
+
+    const summary = await caller.admin.tenants.update({
+      tenantId: tenant.id,
+      name: renamed,
+      defaultLanguage: Language.EN,
+    });
+    const row = await prisma.tenant.findUnique({ where: { id: tenant.id } });
+
+    expect(summary.name).toBe(renamed);
+    expect(row?.name).toBe(renamed);
+    expect(row?.defaultLanguage).toBe(Language.EN);
+  });
+
+  it("leaves the identifier alone, which is what tells two customers apart", async () => {
+    const { caller } = await operatorCaller();
+    const tenant = await createTestTenant();
+
+    const summary = await caller.admin.tenants.update({
+      tenantId: tenant.id,
+      name: `Renamed ${uniqueSuffix()}`,
+      defaultLanguage: Language.EN,
+    });
+
+    expect(summary.id).toBe(tenant.id);
+  });
+
+  it("returns the counts, so the screen that asked can redraw the row", async () => {
+    const { caller } = await operatorCaller();
+    const tenant = await createTestTenant();
+    await createTestUser({ tenantId: tenant.id });
+
+    const summary = await caller.admin.tenants.update({
+      tenantId: tenant.id,
+      name: `Renamed ${uniqueSuffix()}`,
+      defaultLanguage: Language.JA,
+    });
+
+    expect(summary.userCount).toBe(1);
+    expect(summary.conversationCount).toBe(0);
+  });
+
+  it("refuses an empty display name, and one that is only whitespace", async () => {
+    const { caller } = await operatorCaller();
+    const tenant = await createTestTenant();
+
+    for (const name of ["", "   "]) {
+      await expect(
+        caller.admin.tenants.update({ tenantId: tenant.id, name, defaultLanguage: Language.JA }),
+      ).rejects.toMatchObject({ code: "BAD_REQUEST" });
+    }
+
+    await expect(
+      prisma.tenant.findUnique({ where: { id: tenant.id }, select: { name: true } }),
+    ).resolves.toEqual({ name: tenant.name });
+  });
+
+  it("says so when the tenant does not exist", async () => {
+    const { caller } = await operatorCaller();
+
+    await expect(
+      caller.admin.tenants.update({
+        tenantId: "clzzzzzzzzzzzzzzzzzzzzzzz",
+        name: "Nobody",
+        defaultLanguage: Language.JA,
+      }),
+    ).rejects.toMatchObject({ code: "NOT_FOUND" });
   });
 });
 
@@ -184,5 +264,22 @@ describe("who may reach these procedures", () => {
     });
 
     await expect(prisma.tenant.count({ where: { name } })).resolves.toBe(0);
+  });
+
+  it("changes nothing when it refuses an edit", async () => {
+    const tenant = await createTestTenant();
+    const { caller } = await createTestCaller();
+
+    await expect(
+      caller.admin.tenants.update({
+        tenantId: tenant.id,
+        name: `Hijacked ${uniqueSuffix()}`,
+        defaultLanguage: Language.EN,
+      }),
+    ).rejects.toMatchObject({ code: "UNAUTHORIZED" });
+
+    await expect(
+      prisma.tenant.findUnique({ where: { id: tenant.id }, select: { name: true } }),
+    ).resolves.toEqual({ name: tenant.name });
   });
 });

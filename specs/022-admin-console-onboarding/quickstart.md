@@ -100,10 +100,13 @@ in must show as not completed.
 ## 7. Settings (US5)
 
 As the tenant user, open settings with the settings control and again with the
-keyboard shortcut (FR-036). Expected: user identifier and email address shown and
-not editable (FR-037). Change the display name, then the language — the interface
-must switch language immediately (FR-040). Change the password, then confirm the
-old one no longer signs in.
+keyboard shortcut (FR-036). Settings open as a dialog over the application, so
+check the ways out too: the close control, Escape, and a click on the scrim.
+Expected: user identifier and email address shown and not editable (FR-037).
+Change the display name, then the language — the interface must switch language
+immediately, **including the language control itself** (FR-040). Change the
+password: the new one is typed twice, a mismatch is refused before anything is
+sent, and once it lands the old one no longer signs in.
 
 ## 8. Sessions and throttling
 

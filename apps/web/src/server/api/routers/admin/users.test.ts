@@ -219,6 +219,87 @@ describe("admin.users.listByTenant", () => {
   });
 });
 
+describe("admin.users.update", () => {
+  it("changes the display name and the language", async () => {
+    const { caller } = await operatorCaller();
+    const { user } = await createTestUser({ name: "Before", language: Language.JA });
+
+    const summary = await caller.admin.users.update({
+      userId: user.id,
+      name: "After",
+      language: Language.EN,
+    });
+    const row = await prisma.user.findUnique({ where: { id: user.id } });
+
+    expect(summary.name).toBe("After");
+    expect(row?.name).toBe("After");
+    expect(row?.language).toBe(Language.EN);
+  });
+
+  it("leaves the address, the tenant and the password alone", async () => {
+    const { caller } = await operatorCaller();
+    const { user, password } = await createTestUser();
+
+    await caller.admin.users.update({ userId: user.id, name: "Renamed", language: Language.EN });
+    const row = await prisma.user.findUniqueOrThrow({ where: { id: user.id } });
+
+    // FR-018: the address is immutable, and this procedure cannot even express
+    // a change to it. Moving a user between tenants would carry their history
+    // across an isolation boundary, so that is not expressible either.
+    expect(row.email).toBe(user.email);
+    expect(row.tenantId).toBe(user.tenantId);
+    await expect(verifyPassword(password, row.passwordHash)).resolves.toBe(true);
+  });
+
+  it("does not disturb an unfinished or a finished first login", async () => {
+    const { caller } = await operatorCaller();
+    const { user } = await createTestUser({ firstLoginCompleted: false });
+
+    await caller.admin.users.update({ userId: user.id, name: "Renamed", language: Language.JA });
+    const row = await prisma.user.findUniqueOrThrow({ where: { id: user.id } });
+
+    expect(row.firstLoginCompletedAt).toBeNull();
+    expect(row.mustChangePassword).toBe(true);
+  });
+
+  it("keeps the user signed in, because a rename is not a credential change", async () => {
+    const { caller } = await operatorCaller();
+    const { user } = await createTestUser({ firstLoginCompleted: true });
+    const session = await createUserSession(user.id);
+
+    await caller.admin.users.update({ userId: user.id, name: "Renamed", language: Language.JA });
+
+    await expect(resolveUserSession(session.token)).resolves.not.toBeNull();
+  });
+
+  it("refuses an empty display name, and one that is only whitespace", async () => {
+    const { caller } = await operatorCaller();
+    const { user } = await createTestUser({ name: "Keep me" });
+
+    for (const name of ["", "   "]) {
+      await expect(
+        caller.admin.users.update({ userId: user.id, name, language: Language.JA }),
+      ).rejects.toMatchObject({ code: "BAD_REQUEST" });
+    }
+
+    await expect(
+      prisma.user.findUnique({ where: { id: user.id }, select: { name: true } }),
+    ).resolves.toEqual({ name: "Keep me" });
+  });
+
+  it("says so when the user does not exist", async () => {
+    const { caller } = await operatorCaller();
+
+    await expect(
+      caller.admin.users.update({
+        userId: "clzzzzzzzzzzzzzzzzzzzzzzz",
+        name: "Nobody",
+        language: Language.JA,
+      }),
+    ).rejects.toMatchObject({ code: "NOT_FOUND" });
+  });
+});
+
 describe("admin.users.reissuePassword", () => {
   it("issues a new password and invalidates the old one", async () => {
     const { caller } = await operatorCaller();
@@ -330,16 +411,33 @@ describe("who may reach these procedures", () => {
 });
 
 describe("what this router deliberately does not offer", () => {
-  it("has no procedure that changes an email address, and none that deletes", () => {
-    // FR-018 makes the address immutable and FR-046 forbids deletion. Both are
-    // properties of what is absent, so the assertion is on the router's shape:
-    // adding `update` or `delete` here should fail this test and make whoever
-    // added it go and read the spec.
+  it("has no procedure that deletes, and none that names an address to change", async () => {
+    // FR-046 forbids deletion outright, and FR-018 makes the address immutable.
+    // Deletion is a property of what is absent, so the assertion is on the
+    // router's shape: adding `delete` here should fail this test and make
+    // whoever added it go and read the spec.
     const procedures = Object.keys(appRouter._def.procedures)
       .filter((name) => name.startsWith("admin.users."))
       .map((name) => name.replace("admin.users.", ""))
       .sort();
 
-    expect(procedures).toEqual(["create", "listByTenant", "reissuePassword"]);
+    expect(procedures).toEqual(["create", "listByTenant", "reissuePassword", "update"]);
+
+    // `update` exists, and immutability moves into its input schema: an address
+    // smuggled into the request is stripped before the procedure sees it, so
+    // there is no path from this router to a changed address.
+    const { caller } = await operatorCaller();
+    const { user } = await createTestUser();
+
+    await caller.admin.users.update({
+      userId: user.id,
+      name: "Renamed",
+      language: Language.JA,
+      email: "somebody-else@example.test",
+    } as Parameters<typeof caller.admin.users.update>[0]);
+
+    await expect(
+      prisma.user.findUnique({ where: { id: user.id }, select: { email: true } }),
+    ).resolves.toEqual({ email: user.email });
   });
 });

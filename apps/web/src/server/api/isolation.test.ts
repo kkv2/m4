@@ -51,9 +51,11 @@ describe("the procedure surface", () => {
       "admin.tenants.create",
       "admin.tenants.get",
       "admin.tenants.list",
+      "admin.tenants.update",
       "admin.users.create",
       "admin.users.listByTenant",
       "admin.users.reissuePassword",
+      "admin.users.update",
       "auth.me",
       "auth.signIn",
       "auth.signOut",
@@ -86,6 +88,34 @@ describe("tenant isolation (SC-007)", () => {
     await expect(
       mine.caller.admin.users.reissuePassword({ userId: theirs.user.id }),
     ).rejects.toMatchObject({ code: "UNAUTHORIZED" });
+  });
+
+  it("gives a signed-in user no procedure that edits another tenant or its people", async () => {
+    const mine = await tenantWithUser();
+    const theirs = await tenantWithUser(`Other ${uniqueSuffix()}`);
+
+    await expect(
+      mine.caller.admin.tenants.update({
+        tenantId: theirs.tenant.id,
+        name: `Hijacked ${uniqueSuffix()}`,
+        defaultLanguage: "EN",
+      }),
+    ).rejects.toMatchObject({ code: "UNAUTHORIZED" });
+    await expect(
+      mine.caller.admin.users.update({
+        userId: theirs.user.id,
+        name: "Hijacked",
+        language: "EN",
+      }),
+    ).rejects.toMatchObject({ code: "UNAUTHORIZED" });
+
+    // And nothing moved.
+    await expect(
+      prisma.tenant.findUnique({ where: { id: theirs.tenant.id }, select: { name: true } }),
+    ).resolves.toEqual({ name: theirs.tenant.name });
+    await expect(
+      prisma.user.findUnique({ where: { id: theirs.user.id }, select: { name: true } }),
+    ).resolves.toEqual({ name: theirs.user.name });
   });
 
   it("gives a signed-in user no procedure that writes to another tenant", async () => {

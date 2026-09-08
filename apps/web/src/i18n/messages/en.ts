@@ -11,7 +11,9 @@ export const en: Messages = {
     save: "Save",
     cancel: "Cancel",
     submit: "Submit",
+    close: "Close",
     loading: "Loading…",
+    requiredLegend: "* marks a required field.",
     unexpectedError: "Something went wrong. Please try again in a moment.",
   },
   signIn: {
@@ -40,6 +42,8 @@ export const en: Messages = {
     sameAsIssued: "Choose a password different from the one you were given.",
     currentIncorrect: "That is not your current password.",
     sameAsCurrent: "Choose a password different from your current one.",
+    confirmLabel: "New password (confirm)",
+    mismatch: "The two new passwords do not match.",
   },
   settings: {
     title: "Settings",
@@ -53,9 +57,10 @@ export const en: Messages = {
     changePassword: "Change password",
     saved: "Your changes have been saved.",
     shortcutHint: "You can also press ⌘ + ,",
-    close: "Close",
   },
   app: {
+    consoleName: "User Console",
+    home: "Go to home",
     welcome: "Welcome",
     nothingHereYet: "Chat is coming soon. Your sign-in is complete.",
     settings: "Settings",
