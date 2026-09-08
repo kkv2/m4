@@ -157,8 +157,12 @@ infrastructure. Cloud infrastructure is deliberately out of scope for now.
   query by `ctx.tenantId`.
 - **Dark base tone.** The palette lives in `apps/web/src/app/globals.css` as
   Tailwind theme tokens. Use the tokens rather than hard-coded colours.
-- **Prisma models are `PascalCase` singular** and map to `snake_case` plural
-  tables via `@@map`.
+- **The database speaks `snake_case`, the client speaks `camelCase`.** Prisma
+  models are `PascalCase` singular and map to `snake_case` plural tables via
+  `@@map`; every multi-word field carries a `@map("snake_case")` so the physical
+  column matches. PostgreSQL folds unquoted identifiers to lower case, so a
+  camelCase column would need quoting in every hand-written query. Field names
+  stay `camelCase` — `@map` changes the column, not the Prisma Client API.
 - **Prisma connects through a driver adapter.** `schema.prisma` carries no
   connection URL: the CLI reads it from `prisma.config.ts`, and `PrismaClient`
   gets `@prisma/adapter-pg` in `packages/db/src/index.ts`.
