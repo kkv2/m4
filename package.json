@@ -3,6 +3,12 @@
   "version": "0.1.0",
   "private": true,
   "description": "M4 \u2014 Multi Model, Multi Modal.",
+  "license": "MIT",
+  "author": "kkv2",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kkv2/m4.git"
+  },
   "packageManager": "pnpm@9.15.4",
   "engines": {
     "node": ">=22.11.0"
