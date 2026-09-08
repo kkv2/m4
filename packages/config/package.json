@@ -2,6 +2,7 @@
   "name": "@m4/config",
   "version": "0.1.0",
   "private": true,
+  "license": "MIT",
   "type": "module",
   "files": [
     "eslint.base.js",
