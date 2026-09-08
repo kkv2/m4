@@ -61,9 +61,9 @@ model Tenant {
   /// legitimately share a name, and `id` is what tells them apart.
   name            String
   /// Pre-selected for every user registered under this tenant.
-  defaultLanguage Language @default(JA)
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  defaultLanguage Language @default(JA) @map("default_language")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
 
   users         User[]
   conversations Conversation[]
@@ -74,26 +74,26 @@ model Tenant {
 
 model User {
   id           String @id @default(cuid())
-  tenantId     String
+  tenantId     String @map("tenant_id")
   /// Unique across the whole platform, not merely within the tenant: sign-in
   /// takes an address and a password and nothing else, so the address alone has
   /// to identify both the account and its tenant. Immutable after registration.
   email        String @unique
   name         String
-  passwordHash String
+  passwordHash String @map("password_hash")
 
   /// Set from the tenant default at registration, then owned by the user.
   language              Language
   /// When the user passed the first-login language step. Null means they have
   /// not — which is not the same as `language` having no value.
-  languageConfirmedAt   DateTime?
+  languageConfirmedAt   DateTime? @map("language_confirmed_at")
   /// True whenever the current password was generated rather than chosen.
-  mustChangePassword    Boolean   @default(true)
+  mustChangePassword    Boolean   @default(true) @map("must_change_password")
   /// Set only once both first-login steps are done. Read by the operator console.
-  firstLoginCompletedAt DateTime?
+  firstLoginCompletedAt DateTime? @map("first_login_completed_at")
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
   tenant        Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   conversations Conversation[]
@@ -110,9 +110,9 @@ model User {
 model Operator {
   id           String   @id @default(cuid())
   email        String   @unique
-  passwordHash String
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  passwordHash String   @map("password_hash")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
 
   sessions OperatorSession[]
 
@@ -126,11 +126,11 @@ model UserSession {
   id         String   @id @default(cuid())
   /// SHA-256 of the opaque token the browser holds. The token itself is never
   /// stored, so a database dump cannot be replayed as a session.
-  tokenHash  String   @unique
-  userId     String
-  createdAt  DateTime @default(now())
-  lastUsedAt DateTime @default(now())
-  expiresAt  DateTime
+  tokenHash  String   @unique @map("token_hash")
+  userId     String   @map("user_id")
+  createdAt  DateTime @default(now()) @map("created_at")
+  lastUsedAt DateTime @default(now()) @map("last_used_at")
+  expiresAt  DateTime @map("expires_at")
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -142,11 +142,11 @@ model UserSession {
 /// A signed-in operator. Same shape as UserSession, against Operator.
 model OperatorSession {
   id         String   @id @default(cuid())
-  tokenHash  String   @unique
-  operatorId String
-  createdAt  DateTime @default(now())
-  lastUsedAt DateTime @default(now())
-  expiresAt  DateTime
+  tokenHash  String   @unique @map("token_hash")
+  operatorId String   @map("operator_id")
+  createdAt  DateTime @default(now()) @map("created_at")
+  lastUsedAt DateTime @default(now()) @map("last_used_at")
+  expiresAt  DateTime @map("expires_at")
 
   operator Operator @relation(fields: [operatorId], references: [id], onDelete: Cascade)
 
@@ -164,8 +164,8 @@ model SignInThrottle {
   surface         SignInSurface
   scope           ThrottleScope
   key             String
-  failureCount    Int           @default(0)
-  windowStartedAt DateTime      @default(now())
+  failureCount    Int           @default(0) @map("failure_count")
+  windowStartedAt DateTime      @default(now()) @map("window_started_at")
 
   @@unique([surface, scope, key])
   @@index([windowStartedAt])
@@ -174,11 +174,11 @@ model SignInThrottle {
 
 model Conversation {
   id        String   @id @default(cuid())
-  tenantId  String
-  userId    String
+  tenantId  String   @map("tenant_id")
+  userId    String   @map("user_id")
   title     String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
   tenant   Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -191,14 +191,14 @@ model Conversation {
 
 model Message {
   id             String       @id @default(cuid())
-  conversationId String
+  conversationId String       @map("conversation_id")
   role           MessageRole
   /// Rendered text content. Non-text modalities live in `attachments`.
   content        String
   /// The model that produced this message, e.g. "gpt-4o" or "gemini-2.0-flash".
   provider       LlmProvider?
   model          String?
-  createdAt      DateTime     @default(now())
+  createdAt      DateTime     @default(now()) @map("created_at")
 
   conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
   attachments  Attachment[]
@@ -209,12 +209,12 @@ model Message {
 
 model Attachment {
   id         String   @id @default(cuid())
-  messageId  String
+  messageId  String   @map("message_id")
   /// Object storage key. Local development writes to the Docker volume.
-  storageKey String
-  mimeType   String
-  sizeBytes  Int
-  createdAt  DateTime @default(now())
+  storageKey String   @map("storage_key")
+  mimeType   String   @map("mime_type")
+  sizeBytes  Int      @map("size_bytes")
+  createdAt  DateTime @default(now()) @map("created_at")
 
   message Message @relation(fields: [messageId], references: [id], onDelete: Cascade)
 
@@ -224,15 +224,15 @@ model Attachment {
 
 model Document {
   id           String         @id @default(cuid())
-  tenantId     String
-  uploadedById String?
+  tenantId     String         @map("tenant_id")
+  uploadedById String?        @map("uploaded_by_id")
   title        String
-  storageKey   String
-  mimeType     String
-  sizeBytes    Int
+  storageKey   String         @map("storage_key")
+  mimeType     String         @map("mime_type")
+  sizeBytes    Int            @map("size_bytes")
   status       DocumentStatus @default(PENDING)
-  createdAt    DateTime       @default(now())
-  updatedAt    DateTime       @updatedAt
+  createdAt    DateTime       @default(now()) @map("created_at")
+  updatedAt    DateTime       @updatedAt @map("updated_at")
 
   tenant     Tenant          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   uploadedBy User?           @relation(fields: [uploadedById], references: [id], onDelete: SetNull)
@@ -246,11 +246,11 @@ model Document {
 /// follow-up migration once the pgvector extension is enabled.
 model DocumentChunk {
   id         String   @id @default(cuid())
-  documentId String
+  documentId String   @map("document_id")
   /// Position of this chunk within its source document, starting at 0.
   ordinal    Int
   content    String
-  createdAt  DateTime @default(now())
+  createdAt  DateTime @default(now()) @map("created_at")
 
   document Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
 
