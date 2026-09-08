@@ -37,7 +37,7 @@
   },
   "devDependencies": {
     "@m4/config": "workspace:*",
-    "dotenv": "^16.4.7",
+    "dotenv": "^17.4.2",
     "prettier": "^3.4.2",
     "prettier-plugin-tailwindcss": "^0.8.1",
     "prisma": "^7.10.0",
